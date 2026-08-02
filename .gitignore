@@ -1,0 +1,81 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Caches & Testing
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment Variables & Secrets
+.env
+.env.*
+*.env
+!.env.example
+
+# Machine Learning & YOLO Training Artifacts
+backend/training/runs/
+backend/training/data/train/
+backend/training/data/valid/
+backend/training/data/test/
+runs/
+
+# Model Weights (.pt, .onnx, .engine, etc.)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.weights
+*.bin
+*.safetensors
+*.h5
+
+# Keep gitkeep and the fine-tuned best.pt for running the MVP
+!.gitkeep
+!backend/model/weights/best.pt
+
+# Datasets & Archives
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Logs & Temporary Files
+*.log
+logs/
+tmp/
+*.tmp
+
+# Operating System & IDE Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node / Frontend Caches
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

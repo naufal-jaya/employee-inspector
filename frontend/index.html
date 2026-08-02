@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeIndustrial — Industrial Safety & PPE Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app">
+    <header class="app__header">
+      <div class="brand-badge">COMPFEST AIC 2026 — Smart Manufacturing & Logistics</div>
+      <h1>Industrial Safety & PPE Vision Inspector</h1>
+      <p>Upload a workplace image to detect workers, safety equipment, non-compliance violations, and environmental hazards in real-time.</p>
+    </header>
+
+    <main class="app__main">
+      <section class="upload-panel" id="uploadPanel">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="upload-panel__dropzone" id="dropzone">
+          <span id="dropzoneLabel">Click or drag & drop workplace photo here</span>
+        </div>
+        <button id="analyzeBtn" class="btn btn--primary" disabled>Analyze Image</button>
+      </section>
+
+      <p id="statusMsg" class="status-msg"></p>
+
+      <section class="result-panel" id="resultPanel" hidden>
+        <!-- Left: Annotated Image Display -->
+        <div class="result-panel__left">
+          <div class="panel-header">
+            <h3>Annotated Safety Inspection</h3>
+            <span class="panel-tag">Visual Detection Output</span>
+          </div>
+          <div class="result-panel__image">
+            <img id="annotatedImage" alt="Annotated visual inspection" />
+          </div>
+        </div>
+
+        <!-- Right: Metrics & Analysis Breakdown -->
+        <div class="result-panel__right">
+          <!-- Safety Metrics Dashboard -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Safety Score</span>
+              <span class="metric-value" id="metricScore">0%</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Objects</span>
+              <span class="metric-value" id="metricObjects">0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Persons</span>
+              <span class="metric-value" id="metricPersons">0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Violations</span>
+              <span class="metric-value metric-value--bad" id="metricViolations">0</span>
+            </div>
+          </div>
+
+          <!-- All Detected Objects Breakdown -->
+          <div class="analysis-section">
+            <h4>All Detected Objects & Confidence</h4>
+            <div class="objects-grid" id="objectsGrid"></div>
+          </div>
+
+          <!-- Worker Compliance List -->
+          <div class="analysis-section">
+            <h4>Worker Compliance & Advisory</h4>
+            <div class="result-panel__list" id="resultList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
