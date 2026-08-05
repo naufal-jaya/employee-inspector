@@ -129,7 +129,7 @@ function renderResults(data) {
 
   if (resultPanel) resultPanel.hidden = false;
   if (annotatedImage && data.annotated_image) {
-    annotatedImage.src = `data:image/jpeg;base64,${data.annotated_image}`;
+    annotatedImage.src = data.annotated_image;
   }
 
   // Summary Metrics
@@ -170,7 +170,7 @@ function renderResults(data) {
 
     results.forEach((person) => {
       const card = document.createElement("div");
-      const isCompliant = person.is_compliant;
+      const isCompliant = person.compliance_status === "Compliant";
       card.className = `person-card ${isCompliant ? "person-card--compliant" : "person-card--violation"}`;
 
       const missingPpeHtml = person.missing_ppe.length
