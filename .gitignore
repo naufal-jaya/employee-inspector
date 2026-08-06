@@ -44,9 +44,10 @@ runs/
 *.safetensors
 *.h5
 
-# Keep gitkeep and the fine-tuned best.pt for running the MVP
+# Keep gitkeep, the fine-tuned best.pt, and the COCO person model for running the MVP
 !.gitkeep
 !backend/model/weights/best.pt
+!backend/model/weights/yolov8n.pt
 
 # Datasets & Archives
 *.zip

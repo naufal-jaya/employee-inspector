@@ -134,7 +134,9 @@ function renderResults(data) {
 
   // Summary Metrics
   const summary = data.summary || {};
-  if (metricScore) metricScore.textContent = `${summary.safety_score ?? 0}%`;
+  if (metricScore) {
+    metricScore.textContent = (summary.person_count ?? 0) > 0 ? `${summary.safety_score ?? 0}%` : "—";
+  }
   if (metricObjects) metricObjects.textContent = summary.total_objects ?? 0;
   if (metricPersons) metricPersons.textContent = summary.person_count ?? 0;
   if (metricViolations) metricViolations.textContent = summary.violations_count ?? 0;

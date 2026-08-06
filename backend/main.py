@@ -25,6 +25,7 @@ from compliance.rules import analyze_compliance
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
+PERSON_MODEL_PATH = os.getenv("PERSON_MODEL_PATH", "model/weights/yolov8n.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
 
 app = FastAPI(title="PPE Compliance Detection API", version="1.0.0")
@@ -43,7 +44,7 @@ detector: PPEDetector | None = None
 def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
-    detector = PPEDetector(MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD)
+    detector = PPEDetector(MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD, PERSON_MODEL_PATH)
 
 
 @app.get("/health")
@@ -57,7 +58,7 @@ def _get_class_color(class_name: str) -> tuple:
     elif class_name in ["Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"]:
         return (47, 191, 113)    # Emerald Green for Compliant PPE
     elif class_name == "Person":
-        return (235, 140, 40)    # Soft Cyan/Blue for Person
+        return (235, 140, 40)    # Orange for Person (BGR)
     else:
         return (52, 177, 242)    # Amber/Yellow for Equipment & Hazards (Ladder, Safety Cone)
 
@@ -128,7 +129,7 @@ async def analyze(image: UploadFile = File(...)):
     image_rgb = np.array(pil_image)
     image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
-    # 1. Core inference (synchronous, single pass)
+    # 1. Core inference (synchronous: PPE model + COCO person model)
     detections = detector.predict(image_bgr)
 
     # 2. Rule-based compliance layer

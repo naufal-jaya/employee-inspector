@@ -11,7 +11,9 @@ rekomendasi tindakan per orang.
 Frontend (static HTML/JS, nginx)   -->   Backend (FastAPI)
       upload 1 foto                        |
       tampilkan hasil                      | 1. Decode image
-                                            | 2. YOLOv8 inference (sync, single pass)
+                                            | 2. YOLOv8 inference (sync)
+                                            |    - fine-tuned model  -> semua objek/APD
+                                            |    - COCO model        -> deteksi Person yang andal
                                             | 3. Rule engine: person <-> PPE association,
                                             |    compliance status, risk scoring
                                             | 4. Draw bounding boxes + encode base64
@@ -22,6 +24,11 @@ Frontend (static HTML/JS, nginx)   -->   Backend (FastAPI)
 Semua proses terjadi dalam **satu request-response sinkron** — tidak ada
 job queue, background worker, atau auto-logging pipeline, sesuai batasan
 MVP kompetisi.
+
+> Catatan: model PPE hasil fine-tuning sangat kuat mendeteksi helm/rompi/masker
+> tetapi lemah pada kelas `Person`. Karena itu backend memakai model COCO
+> pretrained (`yolov8n.pt`) hanya untuk deteksi `Person`, lalu menggabungkan
+> hasilnya dengan deteksi APD dari model fine-tuned.
 
 ## Dataset & Fine-tuning
 
@@ -105,10 +112,12 @@ ppe-mvp/
 ├── docker-compose.yml
 ├── backend/
 │   ├── main.py                 # FastAPI app, single /api/analyze endpoint
-│   ├── model/detector.py        # YOLOv8 wrapper (load once, sync predict)
+│   ├── model/detector.py        # YOLOv8 wrapper (fine-tuned PPE + COCO person)
 │   ├── compliance/rules.py      # rule-based compliance + risk scoring
 │   ├── training/train.py        # offline fine-tuning script
-│   └── model/weights/best.pt    # <- taruh hasil fine-tuning di sini
+│   └── model/weights/
+│       ├── best.pt              # <- hasil fine-tuning (APD)
+│       └── yolov8n.pt           # <- COCO pretrained, untuk deteksi Person
 └── frontend/
     ├── index.html / app.js / style.css
 ```
