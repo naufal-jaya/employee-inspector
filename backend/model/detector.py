@@ -28,7 +28,8 @@ class PPEDetector:
         self,
         weights_path: str,
         confidence_threshold: float = 0.4,
-        person_model_path: str = "model/weights/yolov8n.pt",
+        person_model_path: str = "model/weights/yolov8s.pt",
+        person_confidence: float = 0.3,
     ):
         if not os.path.exists(weights_path):
             raise FileNotFoundError(
@@ -38,6 +39,7 @@ class PPEDetector:
             )
         self.model = YOLO(weights_path)
         self.confidence_threshold = confidence_threshold
+        self.person_confidence = person_confidence
         self.class_names = self.model.names  # dict[int, str]
 
         # The fine-tuned PPE model is strong on PPE items but weak on the
@@ -60,7 +62,7 @@ class PPEDetector:
             return []
         results = self.person_model.predict(
             source=image,
-            conf=self.confidence_threshold,
+            conf=self.person_confidence,
             classes=[0],  # COCO class "person"
             verbose=False,
         )
@@ -78,28 +80,25 @@ class PPEDetector:
         return persons
 
     @staticmethod
-    def _same_person(a: List[float], b: List[float]) -> bool:
-        """True if two person boxes likely refer to the same person.
-
-        Compares box centers instead of IoU so that two distinct people
-        standing close together (heavily overlapping boxes) are not merged.
-        """
-        ax1, ay1, ax2, ay2 = a
-        bx1, by1, bx2, by2 = b
-        acx, acy = (ax1 + ax2) / 2, (ay1 + ay2) / 2
-        bcx, bcy = (bx1 + bx2) / 2, (by1 + by2) / 2
-        dist = ((acx - bcx) ** 2 + (acy - bcy) ** 2) ** 0.5
-        a_diag = ((ax2 - ax1) ** 2 + (ay2 - ay1) ** 2) ** 0.5
-        b_diag = ((bx2 - bx1) ** 2 + (by2 - by1) ** 2) ** 0.5
-        return dist < 0.5 * min(a_diag, b_diag)
+    def _center_in_box(box: List[float], outer: List[float], margin: float = 15.0) -> bool:
+        """True if the center point of `box` falls inside `outer` (with margin)."""
+        cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+        return (
+            (outer[0] - margin) <= cx <= (outer[2] + margin)
+            and (outer[1] - margin) <= cy <= (outer[3] + margin)
+        )
 
     def predict(self, image: np.ndarray) -> List[Detection]:
         """
         Run synchronous inference on a single image (H, W, 3).
         Returns a flat list of Detection objects: PPE/object detections from
         the fine-tuned model plus reliable Person detections from the COCO
-        person model. Duplicate person boxes (same center, from both models)
-        are deduplicated keeping the higher-confidence one.
+        person model.
+
+        Person boxes are never merged with each other (avoids under-counting
+        when several people stand close together). A Person detected by the
+        PPE model is only dropped when its center already falls inside a COCO
+        person box, i.e. it is a duplicate of the same person.
         """
         results = self.model.predict(
             source=image,
@@ -123,14 +122,14 @@ class PPEDetector:
 
         # Merge PPE/object detections with the COCO person detections.
         merged = [d for d in detections if d.class_name != "Person"]
-        person_candidates = [d for d in detections if d.class_name == "Person"]
-        person_candidates.extend(self._detect_persons(image))
+        persons = self._detect_persons(image)
 
-        kept_persons: List[Detection] = []
-        for p in sorted(person_candidates, key=lambda d: d.confidence, reverse=True):
-            if any(self._same_person(p.bbox, k.bbox) for k in kept_persons):
+        # Add PPE-model persons that are not already covered by a COCO box.
+        ppe_persons = [d for d in detections if d.class_name == "Person"]
+        for p in sorted(ppe_persons, key=lambda d: d.confidence, reverse=True):
+            if any(self._center_in_box(p.bbox, k.bbox) for k in persons):
                 continue
-            kept_persons.append(p)
+            persons.append(p)
 
-        merged.extend(kept_persons)
+        merged.extend(persons)
         return merged

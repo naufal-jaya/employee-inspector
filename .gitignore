@@ -48,6 +48,7 @@ runs/
 !.gitkeep
 !backend/model/weights/best.pt
 !backend/model/weights/yolov8n.pt
+!backend/model/weights/yolov8s.pt
 
 # Datasets & Archives
 *.zip

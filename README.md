@@ -27,8 +27,11 @@ MVP kompetisi.
 
 > Catatan: model PPE hasil fine-tuning sangat kuat mendeteksi helm/rompi/masker
 > tetapi lemah pada kelas `Person`. Karena itu backend memakai model COCO
-> pretrained (`yolov8n.pt`) hanya untuk deteksi `Person`, lalu menggabungkan
-> hasilnya dengan deteksi APD dari model fine-tuned.
+> pretrained (`yolov8s.pt`) untuk deteksi `Person` (threshold lebih rendah,
+> `PERSON_CONFIDENCE=0.3`, agar orang dari samping/belakang/terhalang tetap
+> tertangkap), lalu menggabungkan hasilnya dengan deteksi APD dari model
+> fine-tuned. Model person bisa diganti lewat env `PERSON_MODEL_PATH`
+> (mis. `yolov8n.pt` untuk lebih cepat, `yolov8m.pt` untuk lebih akurat).
 
 ## Dataset & Fine-tuning
 
@@ -117,7 +120,7 @@ ppe-mvp/
 │   ├── training/train.py        # offline fine-tuning script
 │   └── model/weights/
 │       ├── best.pt              # <- hasil fine-tuning (APD)
-│       └── yolov8n.pt           # <- COCO pretrained, untuk deteksi Person
+│       └── yolov8s.pt           # <- COCO pretrained, untuk deteksi Person
 └── frontend/
     ├── index.html / app.js / style.css
 ```

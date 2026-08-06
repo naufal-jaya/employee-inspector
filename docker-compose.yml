@@ -9,8 +9,9 @@ services:
       - ./backend/model/weights:/app/model/weights:ro
     environment:
       - MODEL_WEIGHTS_PATH=/app/model/weights/best.pt
-      - PERSON_MODEL_PATH=/app/model/weights/yolov8n.pt
+      - PERSON_MODEL_PATH=/app/model/weights/yolov8s.pt
       - CONFIDENCE_THRESHOLD=0.4
+      - PERSON_CONFIDENCE=0.3
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
 
