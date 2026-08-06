@@ -92,13 +92,28 @@ docker compose up --build
 
 ## API Contract
 
-`POST /api/analyze` — multipart form-data, field `image` (file).
+`POST /api/analyze` — multipart form-data, field `image` (file, maksimal 25 MB, format JPEG/PNG/WebP; EXIF orientation otomatis dikoreksi).
 
 Response:
 
 ```json
 {
-  "person_count": 2,
+  "summary": {
+    "total_objects": 5,
+    "person_count": 2,
+    "compliant_persons": 1,
+    "safety_score": 50.0,
+    "violations_count": 1
+  },
+  "all_objects": [
+    {
+      "class_name": "Person",
+      "confidence": 0.91,
+      "confidence_percent": "91.0%",
+      "bbox": [120.0, 45.0, 310.0, 480.0],
+      "category": "person"
+    }
+  ],
   "results": [
     {
       "person_id": 1,
@@ -113,6 +128,10 @@ Response:
   "annotated_image": "data:image/jpeg;base64,..."
 }
 ```
+
+- `category` tiap objek: `person` | `compliant_ppe` | `hazard` (Fall-Detected / kelas `NO-*`) | `equipment`.
+- `risk_level`: `Low` (APD lengkap), `Medium` (1 item non-kritis hilang), `High` (Hardhat hilang atau ≥2 item hilang).
+- Error: `400` (bukan gambar / tidak bisa di-decode / melebihi 25 MB), `503` (model belum dimuat).
 
 ## Struktur Proyek
 

@@ -2,6 +2,9 @@ const API_BASE = window.location.hostname === "localhost"
   ? "http://localhost:8000"
   : `http://${window.location.hostname}:8000`;
 
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB, must match backend
+const MAX_DIMENSION_PX = 1600;
+
 let selectedFile = null;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -40,7 +43,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-function handleFileSelect(file) {
+async function prepareImage(file) {
+  let image;
+  try {
+    image = await createImageBitmap(file);
+  } catch (err) {
+    return file;
+  }
+  const scale = Math.min(1, MAX_DIMENSION_PX / Math.max(image.width, image.height));
+  if (scale >= 1) {
+    image.close();
+    return file;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
+  canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+  image.close();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+  return new File(
+    [blob],
+    file.name.replace(/\.\w+$/, "") + ".jpg",
+    { type: "image/jpeg" }
+  );
+}
+
+async function handleFileSelect(file) {
   const dropzone = document.getElementById("dropzone");
   const dropzoneLabel = document.getElementById("dropzoneLabel");
   const analyzeBtn = document.getElementById("analyzeBtn");
@@ -49,7 +77,20 @@ function handleFileSelect(file) {
     showStatus("Please select a valid image file.", true);
     return;
   }
-  selectedFile = file;
+  if (file.size > MAX_UPLOAD_BYTES) {
+    showStatus("Image too large (max 25 MB).", true);
+    return;
+  }
+  selectedFile = null;
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  showStatus("Preparing image...");
+
+  try {
+    selectedFile = await prepareImage(file);
+  } catch (err) {
+    selectedFile = file;
+  }
+
   if (analyzeBtn) analyzeBtn.disabled = false;
   showStatus("");
 
@@ -183,9 +224,12 @@ function renderResults(data) {
         ? person.detected_ppe.map((item) => `<span class="badge badge--ok">${escapeHtml(item)}</span>`).join(" ")
         : '<span class="badge badge--muted">None</span>';
 
-      const advisory = isCompliant
+      const advisory = person.recommendation || (isCompliant
         ? "Worker fully complies with safety SOP."
-        : `Action required: Missing ${person.missing_ppe.join(", ")}.`;
+        : `Action required: Missing ${person.missing_ppe.join(", ")}.`);
+
+      const riskLevel = String(person.risk_level || "").toLowerCase();
+      const riskBadgeClass = riskLevel ? `badge badge--${riskLevel}` : "badge badge--muted";
 
       card.innerHTML = `
         <div class="person-card__header">
@@ -197,7 +241,8 @@ function renderResults(data) {
         <div class="person-card__details">
           <p><strong>Detected PPE:</strong> ${presentPpeHtml}</p>
           <p><strong>Missing PPE:</strong> ${missingPpeHtml}</p>
-          <p class="advisory-text"><strong>Advisory:</strong> ${advisory}</p>
+          <p><strong>Risk Level:</strong> <span class="${riskBadgeClass}">${escapeHtml(person.risk_level || "Unknown")}</span></p>
+          <p class="advisory-text"><strong>Recommendation:</strong> ${escapeHtml(advisory)}</p>
         </div>
       `;
       resultList.appendChild(card);

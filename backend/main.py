@@ -14,12 +14,13 @@ Deliberately scoped to match the competition's MVP rules:
 import base64
 import io
 import os
+from contextlib import asynccontextmanager
 
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
+from PIL import Image, ImageOps
 
 from compliance.rules import analyze_compliance
 from model.detector import PPEDetector
@@ -28,8 +29,29 @@ MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
 PERSON_MODEL_PATH = os.getenv("PERSON_MODEL_PATH", "model/weights/yolov8s.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
 PERSON_CONFIDENCE = float(os.getenv("PERSON_CONFIDENCE", "0.3"))
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
-app = FastAPI(title="PPE Compliance Detection API", version="1.0.0")
+# Class name constants, shared by coloring and object categorization.
+PERSON_CLASS = "Person"
+FALL_CLASS = "Fall-Detected"
+VIOLATION_PREFIX = "NO-"
+COMPLIANT_PPE_CLASSES = {"Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"}
+
+detector: PPEDetector | None = None
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Load model weights exactly once when the container starts."""
+    global detector
+    detector = PPEDetector(
+        MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD, PERSON_MODEL_PATH, PERSON_CONFIDENCE
+    )
+    yield
+    detector = None
+
+
+app = FastAPI(title="PPE Compliance Detection API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,17 +60,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-detector: PPEDetector | None = None
-
-
-@app.on_event("startup")
-def load_model():
-    """Load model weights exactly once when the container starts."""
-    global detector
-    detector = PPEDetector(
-        MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD, PERSON_MODEL_PATH, PERSON_CONFIDENCE
-    )
-
 
 @app.get("/health")
 def health():
@@ -56,11 +67,11 @@ def health():
 
 
 def _get_class_color(class_name: str) -> tuple:
-    if class_name == "Fall-Detected" or class_name.startswith("NO-"):
+    if class_name == FALL_CLASS or class_name.startswith(VIOLATION_PREFIX):
         return (50, 50, 239)     # Bright Red for Violations / Hazards
-    elif class_name in ["Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"]:
+    elif class_name in COMPLIANT_PPE_CLASSES:
         return (47, 191, 113)    # Emerald Green for Compliant PPE
-    elif class_name == "Person":
+    elif class_name == PERSON_CLASS:
         return (235, 140, 40)    # Orange for Person (BGR)
     else:
         return (52, 177, 242)    # Amber/Yellow for Equipment & Hazards (Ladder, Safety Cone)
@@ -68,7 +79,7 @@ def _get_class_color(class_name: str) -> tuple:
 
 def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_results: list) -> np.ndarray:
     annotated = image_bgr.copy()
-    
+
     # 1. Draw bounding boxes for ALL detected objects (PPE, Persons, Hazards, Equipment)
     for d in detections:
         x1, y1, x2, y2 = [int(v) for v in d.bbox]
@@ -77,7 +88,7 @@ def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_result
 
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
         (text_w, text_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
-        
+
         # Ensure label stays within image bounds
         label_y1 = max(y1 - text_h - 6, 0)
         label_y2 = max(y1, text_h + 6)
@@ -96,7 +107,7 @@ def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_result
         # Draw a subtle double border for person boxes
         cv2.rectangle(annotated, (x1 - 2, y1 - 2), (x2 + 2, y2 + 2), comp_color, 1)
         (tw, th), _ = cv2.getTextSize(status_label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        
+
         # Position label inside top of person box or right above
         box_y = y2 if y1 < 25 else y1 - 2
         cv2.rectangle(annotated, (x1, box_y - th - 6), (x1 + tw + 8, box_y), comp_color, -1)
@@ -115,17 +126,31 @@ def _encode_to_base64(image_bgr: np.ndarray) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buffer).decode("utf-8")
 
 
+def _classify_object(class_name: str) -> str:
+    if class_name == FALL_CLASS or class_name.startswith(VIOLATION_PREFIX):
+        return "hazard"
+    if class_name in COMPLIANT_PPE_CLASSES:
+        return "compliant_ppe"
+    if class_name == PERSON_CLASS:
+        return "person"
+    return "equipment"
+
+
 @app.post("/api/analyze")
-async def analyze(image: UploadFile = File(...)):
+def analyze(image: UploadFile = File(...)):
     if detector is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    raw_bytes = await image.read()
+    raw_bytes = image.file.read()
+    if len(raw_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="Image too large (max 25 MB)")
+
     try:
-        pil_image = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+        # Apply EXIF orientation so phone photos are not analyzed sideways.
+        pil_image = ImageOps.exif_transpose(Image.open(io.BytesIO(raw_bytes))).convert("RGB")
     except Exception:
         raise HTTPException(status_code=400, detail="Could not decode image")
 
@@ -149,12 +174,7 @@ async def analyze(image: UploadFile = File(...)):
             "confidence": round(d.confidence, 4),
             "confidence_percent": f"{d.confidence * 100:.1f}%",
             "bbox": [round(v, 1) for v in d.bbox],
-            "category": (
-                "hazard" if (d.class_name == "Fall-Detected" or d.class_name.startswith("NO-"))
-                else "compliant_ppe" if d.class_name in ["Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"]
-                else "person" if d.class_name == "Person"
-                else "equipment"
-            )
+            "category": _classify_object(d.class_name),
         }
         for d in detections
     ]
@@ -176,4 +196,3 @@ async def analyze(image: UploadFile = File(...)):
         "results": compliance_results,
         "annotated_image": annotated_b64,
     }
-
