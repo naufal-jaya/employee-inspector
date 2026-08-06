@@ -92,6 +92,14 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
       },
       ...
     ]
+
+    Per PPE item, three signals are possible:
+      - negative class detected (e.g. "NO-Hardhat") -> item is MISSING
+        (negative always wins over positive for the same item)
+      - positive class detected (e.g. "Hardhat")    -> item is PRESENT
+      - no signal at all                            -> for CRITICAL_ITEMS
+        the item is treated as MISSING ("no proof of wearing = not worn"),
+        while non-critical items stay neutral to avoid false accusations.
     """
     persons = [d for d in detections if d.class_name == PERSON_CLASS]
     ppe_items = [d for d in detections if d.class_name != PERSON_CLASS]
@@ -116,6 +124,17 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
 
     results = []
     for idx, (_, bucket) in enumerate(buckets.items(), start=1):
+        # Negative wins: if a violation signal exists for an item, it cannot
+        # also be counted as detected/present.
+        for positive in PPE_SCHEMA:
+            if positive in bucket["missing"]:
+                bucket["detected"].discard(positive)
+
+        # Critical items with no evidence at all are assumed missing.
+        for positive in CRITICAL_ITEMS:
+            if positive not in bucket["detected"] and positive not in bucket["missing"]:
+                bucket["missing"].add(positive)
+
         missing = bucket["missing"]
         results.append({
             "person_id": idx,

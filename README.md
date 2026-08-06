@@ -43,9 +43,15 @@ Universe), dengan kelas:
 Person, Hardhat, NO-Hardhat, Safety Vest, NO-Safety Vest, Mask, NO-Mask
 ```
 
-Kelas `NO-*` dipakai langsung sebagai sinyal pelanggaran, sehingga rule
-engine tidak perlu menebak "APD hilang" — cukup membaca hasil deteksi
-eksplisit dari model.
+Kelas `NO-*` dipakai sebagai sinyal pelanggaran eksplisit: jika model
+mendeteksi `NO-Hardhat` di seorang worker, item itu langsung dianggap
+missing (dan sinyal negatif selalu menang atas positif). Untuk item
+**kritis** (`Hardhat`), kalau tidak ada bukti sama sekali (tidak terdeteksi
+`Hardhat` maupun `NO-Hardhat`), item tetap dianggap missing — "tidak ada
+bukti memakai = dianggap tidak memakai" — agar worker tanpa APD tidak
+kepalang di-mark "Compliant" hanya karena model gagal melihatnya. Item
+non-kritis (Mask, Safety Vest) tanpa sinyal dibiarkan netral supaya tidak
+menuduh tanpa bukti.
 
 ### Cara fine-tuning
 
