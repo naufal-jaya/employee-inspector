@@ -27,6 +27,8 @@ PPE_SCHEMA = {
     "Hardhat": "NO-Hardhat",
     "Safety Vest": "NO-Safety Vest",
     "Mask": "NO-Mask",
+    "Gloves": "NO-Gloves",
+    "Goggles": "NO-Goggles",
 }
 
 # How much missing PPE matters. Used for risk scoring only.
