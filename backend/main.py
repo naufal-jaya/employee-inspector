@@ -25,6 +25,7 @@ from compliance.rules import analyze_compliance
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
+BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
 
 app = FastAPI(title="PPE Compliance Detection API", version="1.0.0")
@@ -43,7 +44,7 @@ detector: PPEDetector | None = None
 def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
-    detector = PPEDetector(MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD)
+    detector = PPEDetector(MODEL_WEIGHTS_PATH, BASE_MODEL_PATH, CONFIDENCE_THRESHOLD)
 
 
 @app.get("/health")

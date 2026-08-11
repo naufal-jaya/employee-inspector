@@ -116,6 +116,15 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
                 if item.class_name == negative:
                     bucket["missing"].add(positive)
 
+    # IMPLICIT DEDUCTION
+    # Bypass the model's inability to detect 'NO-*' classes.
+    # If a required PPE item is not found in the person's detected bucket,
+    # we automatically flag it as missing.
+    for _, bucket in buckets.items():
+        for required_ppe in PPE_SCHEMA.keys():
+            if required_ppe not in bucket["detected"]:
+                bucket["missing"].add(required_ppe)
+
     results = []
     for idx, (_, bucket) in enumerate(buckets.items(), start=1):
         missing = bucket["missing"]
