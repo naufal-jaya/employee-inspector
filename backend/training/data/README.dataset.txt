@@ -1,5 +1,5 @@
-# Personal Protective Equipment - Combined Model > 2025-06-17 11:15am
-https://universe.roboflow.com/roboflow-universe-projects/personal-protective-equipment-combined-model
+# worker > 2025-08-25 6:19pm
+https://universe.roboflow.com/safetyeyefinetuningdata/worker-6qxik
 
 Provided by a Roboflow user
 License: CC BY 4.0

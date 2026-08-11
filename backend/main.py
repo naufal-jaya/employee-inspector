@@ -55,7 +55,7 @@ def health():
 def _get_class_color(class_name: str) -> tuple:
     if class_name == "Fall-Detected" or class_name.startswith("NO-"):
         return (50, 50, 239)     # Bright Red for Violations / Hazards
-    elif class_name in ["Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"]:
+    elif class_name in ["Hardhat", "Safety Vest"]:
         return (47, 191, 113)    # Emerald Green for Compliant PPE
     elif class_name == "Person":
         return (235, 140, 40)    # Soft Cyan/Blue for Person
@@ -148,7 +148,7 @@ async def analyze(image: UploadFile = File(...)):
             "bbox": [round(v, 1) for v in d.bbox],
             "category": (
                 "hazard" if (d.class_name == "Fall-Detected" or d.class_name.startswith("NO-"))
-                else "compliant_ppe" if d.class_name in ["Hardhat", "Gloves", "Goggles", "Mask", "Safety Vest"]
+                else "compliant_ppe" if d.class_name in ["Hardhat", "Safety Vest"]
                 else "person" if d.class_name == "Person"
                 else "equipment"
             )
