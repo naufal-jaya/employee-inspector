@@ -85,13 +85,17 @@ class PPEDetector:
         between separate videos.
         """
         # 1. Track Persons — assigns persistent track IDs across frames
+        # Use a custom ByteTrack config tuned for workplace stability:
+        # higher track_buffer to survive occlusions, stricter new_track_thresh
+        # to prevent ghost track births from low-confidence detections.
+        _tracker_cfg = os.path.join(os.path.dirname(__file__), "bytetrack_workplace.yaml")
         person_results = self.person_model.track(
             source=image,
-            conf=0.25,
+            conf=0.4,   # raised from 0.25 — eliminates jittery false detections
             classes=[0],
             persist=True,
             verbose=False,
-            tracker="bytetrack.yaml",
+            tracker=_tracker_cfg,
         )
 
         # 2. Detect PPE (no tracking needed, just find what's there)

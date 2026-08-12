@@ -10,10 +10,17 @@ simpler `rules.py` directly.
 
 from typing import Dict, List
 
+# Tracks visible for less than this duration are almost certainly ghost tracks
+# born from ID fragmentation (tracker briefly loses a person and re-acquires them
+# with a new ID). Real workers and even briefly passing persons are visible for
+# at least this long. Adjust if your videos have very fast walk-throughs.
+MIN_TRACK_SECONDS = 2.0
+
 
 def build_temporal_report(
     per_frame_results: List[List[Dict]],
     fps: float,
+    min_track_seconds: float = MIN_TRACK_SECONDS,
 ) -> List[Dict]:
     """
     Aggregate compliance data across all frames for each tracked person.
@@ -59,8 +66,16 @@ def build_temporal_report(
                 s["detected_ppe_tally"][item] = s["detected_ppe_tally"].get(item, 0) + 1
 
     results = []
+    min_frames = int(min_track_seconds * fps)
+
     for track_id, s in sorted(state.items()):
         total_frames = s["compliant_frames"] + s["violation_frames"]
+
+        # Filter out ghost tracks from ID fragmentation — they are too short-lived
+        # to be real persons and only clutter the report.
+        if total_frames < min_frames:
+            continue
+
         total_seconds = round(total_frames / fps, 1) if fps > 0 else 0.0
         compliant_seconds = round(s["compliant_frames"] / fps, 1) if fps > 0 else 0.0
         violation_seconds = round(s["violation_frames"] / fps, 1) if fps > 0 else 0.0

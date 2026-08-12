@@ -1,0 +1,22 @@
+# Custom ByteTrack config tuned for indoor/construction workplace videos.
+#
+# Key changes from defaults:
+#   track_buffer: 60   (default 30) — remembers lost persons for 2.4s at 25 FPS
+#                                      before killing the track, surviving brief
+#                                      occlusions without creating a new ID.
+#   new_track_thresh: 0.45 (default 0.25) — requires higher confidence to BIRTH
+#                                            a new track, eliminating ghost tracks
+#                                            from noisy low-confidence detections.
+#   track_high_thresh: 0.35 (default 0.25) — primary association threshold;
+#                                             keeps jittery 0.25–0.34 detections
+#                                             from fragmenting stable tracks.
+#   match_thresh: 0.85 (default 0.8) — stricter IoU matching to reduce ID swaps
+#                                       when two persons are spatially close.
+
+tracker_type: bytetrack
+track_high_thresh: 0.35
+track_low_thresh: 0.05
+new_track_thresh: 0.45
+track_buffer: 60
+match_thresh: 0.85
+fuse_score: false
