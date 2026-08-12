@@ -127,6 +127,7 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
         missing = bucket["missing"]
         results.append({
             "person_id": idx,
+            "track_id": getattr(bucket["person"], "track_id", -1),
             "person_bbox": bucket["person"].bbox,
             "detected_ppe": sorted(bucket["detected"]),
             "missing_ppe": sorted(missing),

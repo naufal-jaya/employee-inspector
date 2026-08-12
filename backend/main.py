@@ -14,19 +14,25 @@ Deliberately scoped to match the competition's MVP rules:
 import base64
 import io
 import os
+import subprocess
+import tempfile
+import uuid
 
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from PIL import Image
 
 from compliance.rules import analyze_compliance
+from compliance.temporal import build_temporal_report
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
 BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
+VIDEO_OUTPUT_DIR = "/tmp/ppe_videos"
 
 app = FastAPI(title="PPE Compliance Detection API", version="1.0.0")
 
@@ -45,6 +51,7 @@ def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
     detector = PPEDetector(MODEL_WEIGHTS_PATH, BASE_MODEL_PATH, CONFIDENCE_THRESHOLD)
+    os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 
 
 @app.get("/health")
@@ -173,4 +180,114 @@ async def analyze(image: UploadFile = File(...)):
         "results": compliance_results,
         "annotated_image": annotated_b64,
     }
+
+
+# ---------------------------------------------------------------------------
+# Video Endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/api/analyze-video")
+async def analyze_video(video: UploadFile = File(...)):
+    if detector is None:
+        raise HTTPException(status_code=503, detail="Model not loaded yet")
+
+    allowed_types = ("video/mp4", "video/webm", "video/avi", "video/quicktime", "video/x-matroska")
+    if not video.content_type or not video.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="File must be a video")
+
+    raw_bytes = await video.read()
+
+    # Save upload to a temp file so OpenCV can read it by path
+    suffix = "." + (video.filename.rsplit(".", 1)[-1] if video.filename else "mp4")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_in:
+        tmp_in.write(raw_bytes)
+        input_path = tmp_in.name
+
+    try:
+        cap = cv2.VideoCapture(input_path)
+        if not cap.isOpened():
+            raise HTTPException(status_code=400, detail="Could not open video file")
+
+        fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # OpenCV cannot write H.264 directly (codec is proprietary).
+        # Write a raw mp4v temp file first, then re-encode to H.264 with ffmpeg.
+        raw_filename = f"{uuid.uuid4().hex}_raw.mp4"
+        raw_path = os.path.join(VIDEO_OUTPUT_DIR, raw_filename)
+        output_filename = f"{uuid.uuid4().hex}.mp4"
+        output_path = os.path.join(VIDEO_OUTPUT_DIR, output_filename)
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        writer = cv2.VideoWriter(raw_path, fourcc, fps, (width, height))
+
+        # Reset tracker state for a fresh video
+        try:
+            if hasattr(detector.person_model, "predictor") and detector.person_model.predictor is not None:
+                if hasattr(detector.person_model.predictor, "trackers") and detector.person_model.predictor.trackers:
+                    detector.person_model.predictor.trackers[0].reset()
+        except Exception:
+            pass  # Safe to ignore — tracker resets on new source anyway
+
+        per_frame_results = []
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # Run dual-model tracked inference
+            detections = detector.predict_tracked(frame)
+
+            # Rule-based compliance layer
+            compliance_results = analyze_compliance(detections)
+            per_frame_results.append(compliance_results)
+
+            # Draw bounding boxes for all detections
+            annotated_frame = _draw_annotations(frame, detections, compliance_results)
+            writer.write(annotated_frame)
+
+        cap.release()
+        writer.release()
+
+        # Re-encode raw mp4v → H.264 so browsers can play it natively
+        subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", raw_path,
+                "-vcodec", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-pix_fmt", "yuv420p",   # required for broad browser compatibility
+                "-movflags", "+faststart", # moves moov atom to front for streaming
+                output_path,
+            ],
+            check=True,
+            capture_output=True,
+        )
+        os.unlink(raw_path)  # clean up the raw temp file
+
+        # Build temporal report
+        temporal_summary = build_temporal_report(per_frame_results, fps)
+
+    finally:
+        os.unlink(input_path)
+
+    return {
+        "video_url": f"/api/video/{output_filename}",
+        "fps": round(fps, 2),
+        "temporal_summary": temporal_summary,
+    }
+
+
+@app.get("/api/video/{filename}")
+def serve_video(filename: str):
+    """Stream the processed annotated video back to the browser."""
+    # Only allow safe alphanumeric + hex filenames (no path traversal)
+    safe_name = "".join(c for c in filename if c.isalnum() or c in "._-")
+    path = os.path.join(VIDEO_OUTPUT_DIR, safe_name)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(path, media_type="video/mp4", filename="annotated.mp4")
+
 

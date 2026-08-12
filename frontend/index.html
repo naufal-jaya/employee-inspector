@@ -5,6 +5,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SafeIndustrial — Industrial Safety & PPE Detection</title>
+  <meta name="description"
+    content="AI-powered PPE compliance detection for industrial workplaces. Analyze images and videos for hardhat and safety vest compliance in real-time." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -17,67 +19,184 @@
     <header class="app__header">
       <div class="brand-badge">COMPFEST AIC 2026 — Smart Manufacturing & Logistics</div>
       <h1>Industrial Safety & PPE Vision Inspector</h1>
-      <p>Upload a workplace image to detect workers, safety equipment, non-compliance violations, and environmental hazards in real-time.</p>
+      <p>Detect workers, PPE compliance violations, and environmental hazards from workplace images or videos.</p>
     </header>
 
+    <!-- TAB NAVIGATION -->
+    <nav class="tab-nav" role="tablist" aria-label="Analysis mode">
+      <button class="tab-btn tab-btn--active" id="tabImageBtn" role="tab" aria-selected="true"
+        aria-controls="imagePanel" data-tab="image">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="m21 15-5-5L5 21" />
+        </svg>
+        Image Analysis
+      </button>
+      <button class="tab-btn" id="tabVideoBtn" role="tab" aria-selected="false" aria-controls="videoPanel"
+        data-tab="video">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 8-6 4 6 4V8Z" />
+          <rect x="2" y="6" width="14" height="12" rx="2" />
+        </svg>
+        Video Analysis
+      </button>
+    </nav>
+
     <main class="app__main">
-      <section class="upload-panel" id="uploadPanel">
-        <input type="file" id="fileInput" accept="image/*" hidden />
-        <div class="upload-panel__dropzone" id="dropzone">
-          <span id="dropzoneLabel">Click or drag & drop workplace photo here</span>
+
+      <!-- ======= IMAGE TAB ======= -->
+      <section class="tab-panel tab-panel--active" id="imagePanel" role="tabpanel" aria-labelledby="tabImageBtn">
+        <div class="upload-panel" id="imageUploadPanel">
+          <input type="file" id="imageFileInput" accept="image/*" hidden />
+          <div class="upload-panel__dropzone" id="imageDropzone" tabindex="0" role="button"
+            aria-label="Click or drag and drop a workplace image">
+            <div class="dropzone-inner" id="imageDropzoneLabel">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+              <p>Click or drag &amp; drop a workplace photo here</p>
+              <span>Supports JPG, PNG, WebP</span>
+            </div>
+          </div>
+          <button id="analyzeImageBtn" class="btn btn--primary" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            Analyze Image
+          </button>
         </div>
-        <button id="analyzeBtn" class="btn btn--primary" disabled>Analyze Image</button>
+
+        <p id="imageStatusMsg" class="status-msg"></p>
+
+        <section class="result-panel" id="imageResultPanel" hidden>
+          <div class="result-panel__left">
+            <div class="panel-header">
+              <h3>Annotated Safety Inspection</h3>
+              <span class="badge badge--live">Visual Output</span>
+            </div>
+            <div class="result-panel__image">
+              <img id="annotatedImage" alt="Annotated visual inspection result" />
+            </div>
+          </div>
+
+          <div class="result-panel__right">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <span class="metric-card__value" id="imgMetricScore">—</span>
+                <span class="metric-card__label">Safety Score</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value" id="imgMetricObjects">—</span>
+                <span class="metric-card__label">Objects</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value" id="imgMetricPersons">—</span>
+                <span class="metric-card__label">Persons</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value metric-card__value--bad" id="imgMetricViolations">—</span>
+                <span class="metric-card__label">Violations</span>
+              </div>
+            </div>
+
+            <div class="details-section">
+              <div class="section-title-bar">
+                <h4>Detected Objects</h4>
+                <span class="chip-count" id="imgObjectCount">0 items</span>
+              </div>
+              <div class="objects-grid" id="imgObjectsGrid"></div>
+            </div>
+
+            <div class="details-section">
+              <div class="section-title-bar">
+                <h4>Worker Compliance</h4>
+              </div>
+              <div id="imgResultList"></div>
+            </div>
+          </div>
+        </section>
       </section>
 
-      <p id="statusMsg" class="status-msg"></p>
-
-      <section class="result-panel" id="resultPanel" hidden>
-        <!-- Left: Annotated Image Display -->
-        <div class="result-panel__left">
-          <div class="panel-header">
-            <h3>Annotated Safety Inspection</h3>
-            <span class="panel-tag">Visual Detection Output</span>
+      <!-- ======= VIDEO TAB ======= -->
+      <section class="tab-panel" id="videoPanel" role="tabpanel" aria-labelledby="tabVideoBtn" hidden>
+        <div class="upload-panel" id="videoUploadPanel">
+          <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/avi,video/quicktime" hidden />
+          <div class="upload-panel__dropzone" id="videoDropzone" tabindex="0" role="button"
+            aria-label="Click or drag and drop a workplace video">
+            <div class="dropzone-inner" id="videoDropzoneLabel">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+                <path d="m22 8-6 4 6 4V8Z" />
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+              </svg>
+              <p>Click or drag &amp; drop a workplace video here</p>
+              <span>Supports MP4, WebM, AVI, MOV</span>
+            </div>
           </div>
-          <div class="result-panel__image">
-            <img id="annotatedImage" alt="Annotated visual inspection" />
-          </div>
+          <button id="analyzeVideoBtn" class="btn btn--primary" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Process Video
+          </button>
         </div>
 
-        <!-- Right: Metrics & Analysis Breakdown -->
-        <div class="result-panel__right">
-          <!-- Safety Metrics Dashboard -->
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-label">Safety Score</span>
-              <span class="metric-value" id="metricScore">0%</span>
+        <p id="videoStatusMsg" class="status-msg"></p>
+
+        <section class="result-panel result-panel--video" id="videoResultPanel" hidden>
+          <!-- Left: Annotated Video Player -->
+          <div class="result-panel__left">
+            <div class="panel-header">
+              <h3>Annotated Video Playback</h3>
+              <span class="badge badge--live">Full FPS</span>
             </div>
-            <div class="metric-card">
-              <span class="metric-label">Objects</span>
-              <span class="metric-value" id="metricObjects">0</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">Persons</span>
-              <span class="metric-value" id="metricPersons">0</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-label">Violations</span>
-              <span class="metric-value metric-value--bad" id="metricViolations">0</span>
+            <div class="result-panel__image">
+              <video id="annotatedVideo" controls playsinline class="annotated-video">
+                Your browser does not support HTML5 video.
+              </video>
             </div>
           </div>
 
-          <!-- All Detected Objects Breakdown -->
-          <div class="analysis-section">
-            <h4>All Detected Objects & Confidence</h4>
-            <div class="objects-grid" id="objectsGrid"></div>
-          </div>
+          <!-- Right: Temporal Metrics -->
+          <div class="result-panel__right">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <span class="metric-card__value" id="vidMetricFps">—</span>
+                <span class="metric-card__label">Video FPS</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value" id="vidMetricPersons">—</span>
+                <span class="metric-card__label">Unique Workers</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value" id="vidMetricCompliant">—</span>
+                <span class="metric-card__label">Fully Compliant</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value metric-card__value--bad" id="vidMetricViolators">—</span>
+                <span class="metric-card__label">Had Violations</span>
+              </div>
+            </div>
 
-          <!-- Worker Compliance List -->
-          <div class="analysis-section">
-            <h4>Worker Compliance & Advisory</h4>
-            <div class="result-panel__list" id="resultList"></div>
+            <div class="details-section">
+              <div class="section-title-bar">
+                <h4>Worker Temporal Report</h4>
+              </div>
+              <div id="vidTemporalList"></div>
+            </div>
           </div>
-        </div>
+        </section>
       </section>
+
     </main>
   </div>
 
