@@ -30,7 +30,6 @@ from compliance.temporal import build_temporal_report
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
-BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
 VIDEO_OUTPUT_DIR = "/tmp/ppe_videos"
 
@@ -50,7 +49,7 @@ detector: PPEDetector | None = None
 def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
-    detector = PPEDetector(MODEL_WEIGHTS_PATH, BASE_MODEL_PATH, CONFIDENCE_THRESHOLD)
+    detector = PPEDetector(MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD)
     os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 
 
@@ -223,9 +222,9 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # Reset tracker state for a fresh video
         try:
-            if hasattr(detector.person_model, "predictor") and detector.person_model.predictor is not None:
-                if hasattr(detector.person_model.predictor, "trackers") and detector.person_model.predictor.trackers:
-                    detector.person_model.predictor.trackers[0].reset()
+            if hasattr(detector.ppe_model, "predictor") and detector.ppe_model.predictor is not None:
+                if hasattr(detector.ppe_model.predictor, "trackers") and detector.ppe_model.predictor.trackers:
+                    detector.ppe_model.predictor.trackers[0].reset()
         except Exception:
             pass  # Safe to ignore — tracker resets on new source anyway
 

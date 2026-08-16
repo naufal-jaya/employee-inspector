@@ -48,6 +48,11 @@ def main():
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
+        freeze=0,             # Fully unfreeze — enough data to fine-tune end-to-end
+        hsv_s=0.5,            # Mild saturation randomize, not aggressive
+        lr0=0.001,            # Smoother LR for full fine-tune
+        cos_lr=True,          # Cosine LR decay — better convergence
+        close_mosaic=10,      # Disable mosaic for last 10 epochs — helps precise localization
         patience=10,          # early stop if val metrics plateau
         project="runs/detect",
         name="ppe_finetune",

@@ -9,9 +9,8 @@ services:
       - ./backend/model/weights:/app/model/weights:ro
     environment:
       - MODEL_WEIGHTS_PATH=/app/model/weights/best.pt
-      - BASE_MODEL_PATH=/app/training/yolov8n.pt
       - CONFIDENCE_THRESHOLD=0.4
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
     restart: unless-stopped
 
   frontend:
@@ -24,5 +23,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-
