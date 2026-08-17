@@ -31,6 +31,7 @@ from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
 BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
+POSE_MODEL_PATH = os.getenv("POSE_MODEL_PATH", "model/weights/yolov8n-pose.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.4"))
 VIDEO_OUTPUT_DIR = "/tmp/ppe_videos"
 
