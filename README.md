@@ -46,9 +46,9 @@ endpoint yang sama (tetap sinkron & stateless).
 3. **Deteksi jatuh (Fall-Detected)** — berdasarkan orientasi vektor
    bahu→pinggul (bukan rasio aspek box, yang rawan salah-positif), sehingga
    pekerja yang jatuh/tergeletak ditandai sebagai hazard.
-4. **Economic risk scoring** — skor risiko 0–100, estimasi kerugian per
-   insiden, dan potensi penghematan, berdasarkan statistik keselamatan kerja
-   publik (BPJS Ketenagakerjaan) — dikutip sebagai *estimasi ilustratif*.
+4. **Economic risk scoring** — skor risiko 0–100 yang merangkum pelanggaran
+   dan hazard menjadi satu angka, memperkuat narasi dampak ekonomi
+   (*"Backbone of the Economy"*) tanpa klaim angka finansial yang berlebihan.
 
 ## Dataset & Fine-tuning
 
@@ -128,12 +128,6 @@ Response:
     "hazard_count": 1,
     "risk_score": 45.0
   },
-  "economics": {
-    "risk_score": 45.0,
-    "estimated_loss_per_incident": 25000000,
-    "expected_days_lost_per_incident": 14,
-    "potential_savings": 13750000
-  },
   "hazards": [
     { "class_name": "Fall-Detected", "confidence": 0.9, "bbox": [10, 20, 200, 300] }
   ],
@@ -201,10 +195,3 @@ employee-inspector/
 - Model: parameter statis saat demo (tanpa auto-tuning / feedback loop).
 - Reproduksibilitas: `docker compose up --build` berjalan tanpa internet
   karena seluruh model weights ter-commit.
-
-## Sumber statistik ekonomi (estimasi ilustratif)
-
-- Biaya rata-rata kecelakaan kerja non-fatal & hari kerja hilang: estimasi
-  berdasarkan data BPJS Ketenagakerjaan dan statistik K3 nasional (bandingkan
-  dengan publikasi resmi untuk angka mutakhir).
-- Nilai dipakai sebagai ilustrasi dampak, bukan klaim presisi per lokasi.

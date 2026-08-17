@@ -120,11 +120,7 @@ function renderImageResults(data) {
   setText("imgMetricObjects", s.total_objects ?? 0);
   setText("imgMetricPersons", s.person_count ?? 0);
   setText("imgMetricViolations", s.violations_count ?? 0);
-
-  const econ = data.economics || {};
-  setText("imgMetricRisk", `${s.risk_score ?? econ.risk_score ?? 0} / 100`);
-  setText("imgMetricLoss", formatIDR(econ.estimated_loss_per_incident));
-  setText("imgMetricSavings", formatIDR(econ.potential_savings));
+  setText("imgMetricRisk", `${s.risk_score ?? 0} / 100`);
 
   const allObjects = data.all_objects || [];
   setText("imgObjectCount", `${allObjects.length} item${allObjects.length !== 1 ? "s" : ""}`);
@@ -416,8 +412,7 @@ function renderLiveResults(data) {
   }
 
   const s = data.summary || {};
-  const econ = data.economics || {};
-  setText("liveMetricRisk", `${s.risk_score ?? econ.risk_score ?? 0} / 100`);
+  setText("liveMetricRisk", `${s.risk_score ?? 0} / 100`);
   setText("liveMetricPersons", s.person_count ?? 0);
   setText("liveMetricViolations", s.violations_count ?? 0);
   setText("liveMetricHazards", s.hazard_count ?? 0);
@@ -517,10 +512,4 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = String(str);
   return div.innerHTML;
-}
-
-function formatIDR(value) {
-  const n = Number(value) || 0;
-  if (n === 0) return "Rp 0";
-  return "Rp " + n.toLocaleString("id-ID");
 }

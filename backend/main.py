@@ -197,7 +197,6 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
             "hazard_count": len(hazards),
             "risk_score": economics["risk_score"],
         },
-        "economics": economics,
         "hazards": hazards,
         "all_objects": all_objects,
         "results": compliance_results,

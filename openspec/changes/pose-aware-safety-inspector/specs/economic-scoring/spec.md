@@ -11,16 +11,16 @@ The `/api/analyze` response summary SHALL include a deterministic `risk_score` f
 - **WHEN** a worker is missing a hardhat or a fall hazard is present
 - **THEN** the response `risk_score` decreases relative to the fully-compliant baseline
 
-### Requirement: Economic impact estimates
-The response SHALL include `estimated_loss_per_incident` (IDR) and `potential_savings` (IDR) computed from sourced public workplace-safety statistics (e.g. BPJS Ketenagakerjaan) documented in the README. Values SHALL be derived deterministically from the same inputs as the risk score.
-
-#### Scenario: Estimates returned with analysis
-- **WHEN** an image analysis completes
-- **THEN** the response contains `estimated_loss_per_incident` and `potential_savings` in IDR derived from the documented source statistics
-
-### Requirement: Economic outputs shown in the UI
-The frontend SHALL display the risk score and economic estimates as metric cards alongside the existing safety metrics.
+### Requirement: Risk score shown in the UI
+The frontend SHALL display the risk score as a metric card alongside the existing safety metrics.
 
 #### Scenario: Metrics visible after image analysis
 - **WHEN** a user analyzes an image and the result panel renders
-- **THEN** the risk score and economic estimate metric cards display the returned values
+- **THEN** the risk score metric card displays the returned value
+
+### Requirement: No financial loss/savings estimates exposed
+The response and UI SHALL NOT expose illustrative IDR loss/savings figures, so the system does not present raw rupiah estimates that could be mistaken for precise claims.
+
+#### Scenario: Response contains only the risk score
+- **WHEN** an image analysis completes
+- **THEN** the response summary contains `risk_score` and no `estimated_loss_per_incident` / `potential_savings` fields

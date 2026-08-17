@@ -45,10 +45,10 @@ Constraints:
 - **Rationale**: Box aspect ratio alone false-positives on workers with arms spread; the limb vector is more semantically correct.
 - **Alternatives considered**: Aspect-ratio-only (rejected), training a fall class (needs dataset — rejected).
 
-### D5 — Economic scoring as a pure deterministic module
-- **Decision**: New `backend/compliance/economics.py` with sourced constants (BPJS Ketenagakerjaan workplace-injury statistics), producing `risk_score` (0–100), `estimated_loss_per_incident` (IDR), and `potential_savings`. Computed synchronously inside `/api/analyze`; surfaced as summary fields and frontend metric cards.
-- **Rationale**: Directly addresses the "Backbone of the Economy" theme with a defensible, sourced estimate; zero model work.
-- **Risk framing**: Labeled as estimates based on national averages, not precise per-site values.
+### D5 — Risk scoring as a pure deterministic module
+- **Decision**: New `backend/compliance/economics.py` producing a single deterministic `risk_score` (0–100) from per-person risk levels and hazard detections. Computed synchronously inside `/api/analyze`; surfaced in the response summary and a frontend metric card.
+- **Rationale**: Directly addresses the "Backbone of the Economy" theme with a simple, defensible composite number.
+- **Scope note**: The earlier illustrative IDR loss/savings estimates were dropped — raw rupiah figures risk being read as precise claims. Only the risk score is exposed.
 
 ### D6 — Live camera = per-frame synchronous capture, not streaming
 - **Decision**: Frontend tab uses `getUserMedia`, captures a frame (throttled ~2 FPS, downscaled), and POSTs it to the existing `/api/analyze`. Add an optional `light=true` query that skips base64 annotation so the client can draw boxes itself for responsiveness. Backend remains stateless/synchronous.
