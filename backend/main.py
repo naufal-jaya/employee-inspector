@@ -25,6 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image
 
+from compliance.economics import economic_impact
 from compliance.rules import HAZARD_CLASSES, analyze_compliance
 from compliance.temporal import build_temporal_report
 from model.detector import PPEDetector
@@ -182,6 +183,8 @@ async def analyze(image: UploadFile = File(...)):
         for d in detections if d.class_name in HAZARD_CLASSES
     ]
 
+    economics = economic_impact(compliance_results, hazards)
+
     return {
         "summary": {
             "total_objects": len(all_objects),
@@ -190,7 +193,9 @@ async def analyze(image: UploadFile = File(...)):
             "safety_score": safety_score,
             "violations_count": sum(1 for d in all_objects if d["category"] == "hazard"),
             "hazard_count": len(hazards),
+            "risk_score": economics["risk_score"],
         },
+        "economics": economics,
         "hazards": hazards,
         "all_objects": all_objects,
         "results": compliance_results,

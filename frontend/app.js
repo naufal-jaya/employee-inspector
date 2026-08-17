@@ -120,6 +120,11 @@ function renderImageResults(data) {
   setText("imgMetricPersons", s.person_count ?? 0);
   setText("imgMetricViolations", s.violations_count ?? 0);
 
+  const econ = data.economics || {};
+  setText("imgMetricRisk", `${s.risk_score ?? econ.risk_score ?? 0} / 100`);
+  setText("imgMetricLoss", formatIDR(econ.estimated_loss_per_incident));
+  setText("imgMetricSavings", formatIDR(econ.potential_savings));
+
   const allObjects = data.all_objects || [];
   setText("imgObjectCount", `${allObjects.length} item${allObjects.length !== 1 ? "s" : ""}`);
   const objectsGrid = document.getElementById("imgObjectsGrid");
@@ -345,4 +350,10 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = String(str);
   return div.innerHTML;
+}
+
+function formatIDR(value) {
+  const n = Number(value) || 0;
+  if (n === 0) return "Rp 0";
+  return "Rp " + n.toLocaleString("id-ID");
 }

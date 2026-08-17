@@ -21,10 +21,10 @@
 
 ## 3. Fase 2 — Economic risk & ROI scoring
 
-- [ ] 3.1 Create `backend/compliance/economics.py` with sourced constants and compute functions
-- [ ] 3.2 Integrate `risk_score`, `estimated_loss_per_incident`, `potential_savings` into `/api/analyze` summary
-- [ ] 3.3 Add economic metric cards to `frontend/index.html` and render in `frontend/app.js`
-- [ ] 3.4 Commit + push
+- [x] 3.1 Create `backend/compliance/economics.py` with sourced constants and compute functions
+- [x] 3.2 Integrate `risk_score`, `estimated_loss_per_incident`, `potential_savings` into `/api/analyze` summary
+- [x] 3.3 Add economic metric cards to `frontend/index.html` and render in `frontend/app.js`
+- [x] 3.4 Commit + push
 
 ## 4. Fase 4 — Live camera mode (final polish)
 
