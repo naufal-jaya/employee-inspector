@@ -480,3 +480,34 @@ body {
   margin: 0;
   font-style: italic;
 }
+
+/* Live Camera */
+.live-video-wrap {
+  position: relative;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.live-video {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  display: block;
+}
+.live-video-wrap .empty-text { padding: 40px 0; }
+.live-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.annotated-canvas {
+  width: 100%;
+  border-radius: 12px;
+  background: #000;
+}
+.badge--warn { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }

@@ -28,9 +28,9 @@
 
 ## 4. Fase 4 — Live camera mode (final polish)
 
-- [ ] 4.1 Add Live Camera tab with `getUserMedia` capture loop in `frontend/app.js` + `index.html`
-- [ ] 4.2 Support `light=true` on `/api/analyze` to omit base64 annotation; frontend draws boxes from JSON
-- [ ] 4.3 Commit + push
+- [x] 4.1 Add Live Camera tab with `getUserMedia` capture loop in `frontend/app.js` + `index.html`
+- [x] 4.2 Support `light=true` on `/api/analyze` to omit base64 annotation; frontend draws boxes from JSON
+- [x] 4.3 Commit + push
 
 ## 5. Fase 5 — Documentation & cleanup
 

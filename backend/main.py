@@ -126,7 +126,7 @@ def _encode_to_base64(image_bgr: np.ndarray) -> str:
 
 
 @app.post("/api/analyze")
-async def analyze(image: UploadFile = File(...)):
+async def analyze(image: UploadFile = File(...), light: bool = False):
     if detector is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
@@ -148,9 +148,11 @@ async def analyze(image: UploadFile = File(...)):
     # 2. Rule-based compliance layer
     compliance_results = analyze_compliance(detections)
 
-    # 3. Visual annotation for ALL detected objects + person compliance
-    annotated = _draw_annotations(image_bgr, detections, compliance_results)
-    annotated_b64 = _encode_to_base64(annotated)
+    # 3. Visual annotation (skipped in light mode for faster responses)
+    annotated_b64 = None
+    if not light:
+        annotated = _draw_annotations(image_bgr, detections, compliance_results)
+        annotated_b64 = _encode_to_base64(annotated)
 
     # 4. Format all detected objects output
     all_objects = [
@@ -185,7 +187,7 @@ async def analyze(image: UploadFile = File(...)):
 
     economics = economic_impact(compliance_results, hazards)
 
-    return {
+    response_body = {
         "summary": {
             "total_objects": len(all_objects),
             "person_count": total_persons,
@@ -199,8 +201,13 @@ async def analyze(image: UploadFile = File(...)):
         "hazards": hazards,
         "all_objects": all_objects,
         "results": compliance_results,
-        "annotated_image": annotated_b64,
     }
+
+    # Light mode omits the heavy base64 annotation for faster client-side rendering.
+    if not light:
+        response_body["annotated_image"] = annotated_b64
+
+    return response_body
 
 
 # ---------------------------------------------------------------------------
