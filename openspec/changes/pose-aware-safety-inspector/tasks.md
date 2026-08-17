@@ -4,20 +4,20 @@
 - [x] 1.2 Un-ignore runtime weights in `.gitignore` (`!backend/model/weights/yolov8n.pt`, `!backend/model/weights/yolov8n-pose.pt`)
 - [x] 1.3 Update `docker-compose.yml`: `BASE_MODEL_PATH=/app/model/weights/yolov8n.pt`, add `POSE_MODEL_PATH=/app/model/weights/yolov8n-pose.pt`
 - [x] 1.4 Align default env paths in `backend/main.py` with committed files
-- [ ] 1.5 Verify `docker compose up --build` starts and `GET /health` returns `model_loaded: true`
-- [ ] 1.6 Commit + push (commit message includes Fase 0)
+- [x] 1.5 Verify `docker compose up --build` starts and `GET /health` returns `model_loaded: true`
+- [x] 1.6 Commit + push (commit message includes Fase 0)
 
 ## 2. Fase 1 — Pose-aware compliance (image + video)
 
-- [ ] 2.1 Extend `Detection` dataclass in `detector.py` with `keypoints` and keypoint confidence
-- [ ] 2.2 Load `yolov8n-pose.pt` as the person model; wire `POSE_MODEL_PATH` config
-- [ ] 2.3 Extract keypoints in `predict()` and `predict_tracked()` for each person
-- [ ] 2.4 Implement fall detection (hip→shoulder horizontal vector) emitting synthetic `Fall-Detected`
-- [ ] 2.5 Add `PPE_BODY_REGION` map and `_verify_ppe_worn()` in `rules.py` (worn / carried / uncertain fallback)
-- [ ] 2.6 Surface `worn_ppe`, `carried_ppe`, `verification` in per-person results; count carried as violation, never uncertain
-- [ ] 2.7 Update `main.py`: hazard list, carried/fall annotations, `hazards` in response and summary
-- [ ] 2.8 Add lightweight unit test for pose geometry (worn vs carried vs uncertain) in `backend/tests/`
-- [ ] 2.9 Commit + push
+- [x] 2.1 Extend `Detection` dataclass in `detector.py` with `keypoints` and keypoint confidence
+- [x] 2.2 Load `yolov8n-pose.pt` as the person model; wire `POSE_MODEL_PATH` config
+- [x] 2.3 Extract keypoints in `predict()` and `predict_tracked()` for each person
+- [x] 2.4 Implement fall detection (hip→shoulder horizontal vector) emitting synthetic `Fall-Detected`
+- [x] 2.5 Add `PPE_BODY_REGION` map and `_verify_ppe_worn()` in `rules.py` (worn / carried / uncertain fallback)
+- [x] 2.6 Surface `worn_ppe`, `carried_ppe`, `verification` in per-person results; count carried as violation, never uncertain
+- [x] 2.7 Update `main.py`: hazard list, carried/fall annotations, `hazards` in response and summary
+- [x] 2.8 Add lightweight unit test for pose geometry (worn vs carried vs uncertain) in `backend/tests/`
+- [x] 2.9 Commit + push
 
 ## 3. Fase 2 — Economic risk & ROI scoring
 

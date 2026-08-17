@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image
 
-from compliance.rules import analyze_compliance
+from compliance.rules import HAZARD_CLASSES, analyze_compliance
 from compliance.temporal import build_temporal_report
 from model.detector import PPEDetector
 
@@ -51,7 +51,7 @@ detector: PPEDetector | None = None
 def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
-    detector = PPEDetector(MODEL_WEIGHTS_PATH, BASE_MODEL_PATH, CONFIDENCE_THRESHOLD)
+    detector = PPEDetector(MODEL_WEIGHTS_PATH, POSE_MODEL_PATH, CONFIDENCE_THRESHOLD)
     os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 
 
@@ -97,6 +97,10 @@ def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_result
         x1, y1, x2, y2 = [int(v) for v in r["person_bbox"]]
         comp_color = (0, 200, 0) if r["compliance_status"] == "Compliant" else (0, 0, 220)
         status_label = f"Person #{r['person_id']} [{r['compliance_status']}]"
+        if r.get("carried_ppe"):
+            status_label += " [carried: " + ", ".join(r["carried_ppe"]) + "]"
+        elif r.get("verification") == "uncertain":
+            status_label += " [uncertain]"
 
         # Draw a subtle double border for person boxes
         cv2.rectangle(annotated, (x1 - 2, y1 - 2), (x2 + 2, y2 + 2), comp_color, 1)
@@ -169,14 +173,25 @@ async def analyze(image: UploadFile = File(...)):
     compliant_persons = sum(1 for r in compliance_results if r["compliance_status"] == "Compliant")
     safety_score = round((compliant_persons / total_persons * 100), 1) if total_persons > 0 else 100.0
 
+    hazards = [
+        {
+            "class_name": d.class_name,
+            "confidence": round(d.confidence, 4),
+            "bbox": [round(v, 1) for v in d.bbox],
+        }
+        for d in detections if d.class_name in HAZARD_CLASSES
+    ]
+
     return {
         "summary": {
             "total_objects": len(all_objects),
             "person_count": total_persons,
             "compliant_persons": compliant_persons,
             "safety_score": safety_score,
-            "violations_count": sum(1 for d in all_objects if d["category"] == "hazard")
+            "violations_count": sum(1 for d in all_objects if d["category"] == "hazard"),
+            "hazard_count": len(hazards),
         },
+        "hazards": hazards,
         "all_objects": all_objects,
         "results": compliance_results,
         "annotated_image": annotated_b64,
