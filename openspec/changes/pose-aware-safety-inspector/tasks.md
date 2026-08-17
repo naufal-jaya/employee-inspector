@@ -37,4 +37,4 @@
 - [x] 5.1 Rewrite `README.md` to match actual implementation (3-class dataset, preprocessing, dual-model + pose architecture, fine-tuning steps, innovation features, economic sources)
 - [x] 5.2 Remove dead code references (`Mask`/`NO-*`, `Safety Cone`, `Ladder`) while keeping `Fall-Detected`
 - [x] 5.3 Final end-to-end verification via `docker compose up --build`
-- [ ] 5.4 Final commit + push before deadline
+- [x] 5.4 Final commit + push before deadline
