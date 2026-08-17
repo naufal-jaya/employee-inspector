@@ -69,7 +69,7 @@ def _get_class_color(class_name: str) -> tuple:
     elif class_name == "Person":
         return (235, 140, 40)    # Soft Cyan/Blue for Person
     else:
-        return (52, 177, 242)    # Amber/Yellow for Equipment & Hazards (Ladder, Safety Cone)
+        return (52, 177, 242)    # Blue for equipment & other objects
 
 
 def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_results: list) -> np.ndarray:
