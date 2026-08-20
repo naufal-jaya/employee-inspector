@@ -18,7 +18,7 @@ kompetisi.
 Frontend (static HTML/JS, nginx)          -->   Backend (FastAPI)
   • Tab Image     (upload 1 foto)                 1. Decode image
   • Tab Video     (upload 1 video)                2. YOLOv8-pose  : persons + 17 keypoints
-  • Tab Live Cam  (getUserMedia, 1 frame)         3. YOLOv8 (fine-tuned) : PPE objects
+  • Tab Live Cam  (getUserMedia, auto ~1 detik)   3. YOLOv8 (fine-tuned) : PPE objects
       │                                              Hardhat, Safety Vest, Person
       │ POST /api/analyze | /api/analyze-video       4. Pose verification: worn vs carried
       ▼                                              5. Fall detection (shoulder→hip vector)
@@ -29,8 +29,9 @@ Frontend (static HTML/JS, nginx)          -->   Backend (FastAPI)
 
 Semua proses terjadi dalam **satu request-response sinkron** — tidak ada job
 queue, background worker, streaming, atau auto-logging, sesuai batasan MVP
-kompetisi. Mode *Live Camera* hanya mengirim **satu frame per request** ke
-endpoint yang sama (tetap sinkron & stateless).
+kompetisi. Tab *Live Camera* menganalisis otomatis (±1 detik) dan menggambar
+box langsung di feed, namun tiap request tetap satu frame ke endpoint yang
+sama (sinkron & stateless).
 
 ## Inovasi (pembeda dari deteksi APD konvensional)
 
@@ -78,7 +79,7 @@ names: ['Hardhat', 'Safety Vest', 'Person']
 cd backend/training
 # Pastikan backend/training/data/data.yaml (format YOLOv8) tersedia
 pip install ultralytics
-python train.py --data ./data/data.yaml --epochs 50 --imgsz 640
+python train.py --data ./data/data.yaml --epochs 100 --imgsz 640
 
 # Salin hasil terbaik ke lokasi yang dipakai backend saat runtime
 cp runs/detect/ppe_finetune/weights/best.pt ../model/weights/best.pt
@@ -86,6 +87,8 @@ cp runs/detect/ppe_finetune/weights/best.pt ../model/weights/best.pt
 
 > Training dijalankan manual/offline, **bukan** dipanggil API saat runtime.
 > Inference tetap memakai parameter statis sesuai ketentuan MVP.
+> `auto_annotate.py` (di `backend/training/`) dipakai saat pengembangan untuk
+> auto-labeling / balancing dataset; tidak dipanggil saat runtime.
 
 ### Mengganti ke domain lain (mis. food-hygiene / gudang)
 
@@ -99,8 +102,9 @@ Arsitektur, API contract, verifikasi pose, dan frontend tidak berubah.
 ## Menjalankan
 
 ```bash
-# Model weights (best.pt, yolov8n.pt, yolov8n-pose.pt) sudah ter-commit,
-# sehingga tidak perlu mengunduh apa pun saat build.
+# Build memerlukan internet (menarik base image + instal dependencies
+# pip/apt). Setelah container terbentuk, runtime berjalan OFFLINE:
+# semua model weights sudah ter-commit, tidak ada unduhan saat startup.
 docker compose up --build
 ```
 
@@ -158,8 +162,8 @@ Response:
 
 Multipart form-data, field `video`. Mengembalikan `video_url` (hasil
 anotasi, H.264) + `temporal_summary` agregasi per `track_id` (detik patuh/
-melanggar, laju kepatuhan, pelanggaran utama). Fitur ini melampaui ruang
-lingkup MVP wajib dan menjadi pembeda untuk tahap Final.
+melanggar, laju kepatuhan, pelanggaran utama). Tetap satu input → satu
+output yang sinkron & stateless, sesuai batasan MVP.
 
 ### `GET /health` — status model
 
@@ -179,7 +183,7 @@ employee-inspector/
 │   │   └── weights/             # best.pt, yolov8n.pt, yolov8n-pose.pt (committed)
 │   ├── compliance/
 │   │   ├── rules.py             # worn/carried/uncertain + implicit deduction
-│   │   └── economics.py         # risk score & estimasi dampak ekonomi
+│   │   └── economics.py         # risk score 0-100
 │   ├── training/                # train.py, dataset worker (3 kelas)
 │   └── tests/                   # unit test geometri pose & ekonomi
 └── frontend/
@@ -188,10 +192,12 @@ employee-inspector/
 
 ## Batasan MVP (sesuai ketentuan lomba)
 
-- Frontend: input tunggal → output AI (upload 1 foto / 1 video / 1 frame
-  webcam). Tanpa dashboard lanjutan, otentikasi, atau halaman riwayat.
+- Frontend: input tunggal → output AI (1 foto, 1 video, atau frame webcam
+  — tab Live Camera menganalisis otomatis ±1 detik, tetap satu frame per
+  request). Tanpa dashboard lanjutan, otentikasi, atau halaman riwayat.
 - Backend: pemrosesan sinkron, tanpa background job / message queue /
   pipeline logging otomatis.
 - Model: parameter statis saat demo (tanpa auto-tuning / feedback loop).
-- Reproduksibilitas: `docker compose up --build` berjalan tanpa internet
-  karena seluruh model weights ter-commit.
+- Reproduksibilitas: seluruh model weights ter-commit sehingga **runtime
+  berjalan offline** (tidak ada unduhan saat startup). Build image
+  membutuhkan internet untuk instalasi dependencies.

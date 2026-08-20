@@ -35,6 +35,12 @@ document.addEventListener("DOMContentLoaded", () => {
         panel.classList.add("tab-panel--active");
         panel.hidden = false;
       }
+
+      if (target === "live") {
+        startLiveLoop();
+      } else {
+        stopLiveLoop();
+      }
     });
   });
 
@@ -301,22 +307,23 @@ function buildTemporalCard(worker) {
 // ─────────────────────────────────────────────
 // LIVE CAMERA TAB
 // ─────────────────────────────────────────────
+const LIVE_ANALYZE_INTERVAL_MS = 1000;
+const LIVE_MAX_WIDTH = 640;
 let liveStream = null;
-let liveCapture = null; // { canvas, scale }
+let liveAnalyzeTimer = null;
+let liveBusy = false;
+let liveOverlayScale = 1;
 
 function initLiveTab() {
   const startBtn = document.getElementById("startLiveBtn");
-  const captureBtn = document.getElementById("captureLiveBtn");
   const stopBtn = document.getElementById("stopLiveBtn");
 
   if (startBtn) startBtn.addEventListener("click", startLiveCamera);
-  if (captureBtn) captureBtn.addEventListener("click", captureLiveFrame);
   if (stopBtn) stopBtn.addEventListener("click", stopLiveCamera);
 }
 
 async function startLiveCamera() {
   const startBtn = document.getElementById("startLiveBtn");
-  const captureBtn = document.getElementById("captureLiveBtn");
   const stopBtn = document.getElementById("stopLiveBtn");
   const video = document.getElementById("liveVideo");
   const placeholder = document.getElementById("livePlaceholder");
@@ -331,36 +338,45 @@ async function startLiveCamera() {
     await video.play().catch(() => {});
     if (placeholder) placeholder.style.display = "none";
     startBtn.disabled = true;
-    captureBtn.disabled = false;
     stopBtn.disabled = false;
-    showStatus("liveStatusMsg", "Camera active. Point at a scene, then capture a frame.");
+    setupLiveOverlaySize();
+    showLivePanel(true);
+    showStatus("liveStatusMsg", "Camera active. Analyzing continuously...");
+    startLiveLoop();
   } catch (err) {
     showStatus("liveStatusMsg", `Camera error: ${err.message}`, true);
   }
 }
 
-function stopLiveCamera() {
-  if (liveStream) {
-    liveStream.getTracks().forEach((t) => t.stop());
-    liveStream = null;
-  }
+function setupLiveOverlaySize() {
   const video = document.getElementById("liveVideo");
-  if (video) video.srcObject = null;
-  const placeholder = document.getElementById("livePlaceholder");
-  if (placeholder) placeholder.style.display = "";
-  document.getElementById("startLiveBtn").disabled = false;
-  document.getElementById("captureLiveBtn").disabled = true;
-  document.getElementById("stopLiveBtn").disabled = true;
-  showStatus("liveStatusMsg", "Camera stopped.");
+  const overlay = document.getElementById("liveOverlay");
+  if (!overlay || !video || !video.videoWidth) return;
+  overlay.width = video.videoWidth;
+  overlay.height = video.videoHeight;
 }
 
-async function captureLiveFrame() {
+function startLiveLoop() {
+  if (liveAnalyzeTimer || !liveStream) return;
+  liveAnalyzeLoop();
+  liveAnalyzeTimer = setInterval(liveAnalyzeLoop, LIVE_ANALYZE_INTERVAL_MS);
+}
+
+function stopLiveLoop() {
+  if (liveAnalyzeTimer) {
+    clearInterval(liveAnalyzeTimer);
+    liveAnalyzeTimer = null;
+  }
+}
+
+async function liveAnalyzeLoop() {
+  if (liveBusy) return;
   const video = document.getElementById("liveVideo");
   if (!video || !video.videoWidth) return;
 
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-  const scale = Math.min(1, 640 / vw);
+  const scale = Math.min(1, LIVE_MAX_WIDTH / vw);
   const cw = Math.round(vw * scale);
   const ch = Math.round(vh * scale);
 
@@ -369,14 +385,11 @@ async function captureLiveFrame() {
   canvas.height = ch;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, cw, ch);
-  liveCapture = { canvas, scale };
 
-  const captureBtn = document.getElementById("captureLiveBtn");
-  const resultPanel = document.getElementById("liveResultPanel");
-  setButtonLoading(captureBtn, true, "Analyzing...");
-  showStatus("liveStatusMsg", "Running inference on live frame...");
-  if (resultPanel) resultPanel.hidden = true;
+  const overlay = document.getElementById("liveOverlay");
+  liveOverlayScale = overlay && cw ? overlay.width / cw : 1;
 
+  liveBusy = true;
   try {
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
     const formData = new FormData();
@@ -389,26 +402,21 @@ async function captureLiveFrame() {
     }
     const data = await res.json();
     renderLiveResults(data);
-    showStatus("liveStatusMsg", "Analysis complete. Move the camera and capture again.");
   } catch (err) {
     showStatus("liveStatusMsg", `Live analysis failed: ${err.message}`, true);
   } finally {
-    setButtonLoading(captureBtn, false, "Capture &amp; Analyze");
+    liveBusy = false;
   }
 }
 
 function renderLiveResults(data) {
-  const resultPanel = document.getElementById("liveResultPanel");
-  if (resultPanel) resultPanel.hidden = false;
+  showLivePanel(true);
 
-  const canvas = document.getElementById("liveCanvas");
-  const src = liveCapture?.canvas;
-  if (canvas && src) {
-    canvas.width = src.width;
-    canvas.height = src.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(src, 0, 0);
-    drawLiveAnnotations(ctx, data, liveCapture.scale);
+  const overlay = document.getElementById("liveOverlay");
+  if (overlay) {
+    const ctx = overlay.getContext("2d");
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    drawLiveAnnotations(ctx, data, liveOverlayScale);
   }
 
   const s = data.summary || {};
@@ -424,6 +432,37 @@ function renderLiveResults(data) {
       ? results.map((p) => buildPersonCard(p)).join("")
       : `<p class="empty-text">No persons detected.</p>`;
   }
+}
+
+function showLivePanel(visible) {
+  const panel = document.getElementById("liveResultPanel");
+  if (panel) panel.hidden = !visible;
+}
+
+function stopLiveCamera() {
+  stopLiveLoop();
+  if (liveStream) {
+    liveStream.getTracks().forEach((t) => t.stop());
+    liveStream = null;
+  }
+  const video = document.getElementById("liveVideo");
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+    video.removeAttribute("src");
+    video.load();
+  }
+  const placeholder = document.getElementById("livePlaceholder");
+  if (placeholder) placeholder.style.display = "";
+  const overlay = document.getElementById("liveOverlay");
+  if (overlay) {
+    const ctx = overlay.getContext("2d");
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+  showLivePanel(false);
+  document.getElementById("startLiveBtn").disabled = false;
+  document.getElementById("stopLiveBtn").disabled = true;
+  showStatus("liveStatusMsg", "Camera stopped.");
 }
 
 function drawLiveAnnotations(ctx, data, scale) {

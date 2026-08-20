@@ -81,3 +81,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# OpenCode tooling (local agent config, not part of the deliverable)
+.opencode/

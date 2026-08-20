@@ -214,53 +214,48 @@
       <section class="tab-panel" id="livePanel" role="tabpanel" aria-labelledby="tabLiveBtn" hidden>
         <div class="upload-panel" id="liveUploadPanel">
           <div class="live-video-wrap">
-            <video id="liveVideo" class="live-video" autoplay muted playsinline></video>
+            <div class="live-viewport">
+              <video id="liveVideo" class="live-video" autoplay muted playsinline></video>
+              <canvas id="liveOverlay" class="live-overlay"></canvas>
+            </div>
             <p id="livePlaceholder" class="empty-text">Camera not started yet.</p>
           </div>
           <div class="live-controls">
             <button id="startLiveBtn" class="btn btn--primary">Start Camera</button>
-            <button id="captureLiveBtn" class="btn btn--primary" disabled>Capture &amp; Analyze</button>
             <button id="stopLiveBtn" class="btn" disabled>Stop Camera</button>
           </div>
           <p id="liveStatusMsg" class="status-msg"></p>
         </div>
 
         <section class="result-panel" id="liveResultPanel" hidden>
-          <div class="result-panel__left">
-            <div class="panel-header">
-              <h3>Live Inspection</h3>
-              <span class="badge badge--live">Fast Mode</span>
+          <div class="panel-header">
+            <h3>Live Inspection</h3>
+            <span class="badge badge--live">Auto Mode</span>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-card__value" id="liveMetricRisk">—</span>
+              <span class="metric-card__label">Risk Score</span>
             </div>
-            <div class="result-panel__image">
-              <canvas id="liveCanvas" class="annotated-canvas"></canvas>
+            <div class="metric-card">
+              <span class="metric-card__value" id="liveMetricPersons">—</span>
+              <span class="metric-card__label">Persons</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-card__value metric-card__value--bad" id="liveMetricViolations">—</span>
+              <span class="metric-card__label">Violations</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-card__value" id="liveMetricHazards">—</span>
+              <span class="metric-card__label">Hazards</span>
             </div>
           </div>
-          <div class="result-panel__right">
-            <div class="metrics-grid">
-              <div class="metric-card">
-                <span class="metric-card__value" id="liveMetricRisk">—</span>
-                <span class="metric-card__label">Risk Score</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-card__value" id="liveMetricPersons">—</span>
-                <span class="metric-card__label">Persons</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-card__value metric-card__value--bad" id="liveMetricViolations">—</span>
-                <span class="metric-card__label">Violations</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-card__value" id="liveMetricHazards">—</span>
-                <span class="metric-card__label">Hazards</span>
-              </div>
-            </div>
             <div class="details-section">
               <div class="section-title-bar">
                 <h4>Worker Compliance</h4>
               </div>
               <div id="liveResultList"></div>
             </div>
-          </div>
         </section>
       </section>
 
