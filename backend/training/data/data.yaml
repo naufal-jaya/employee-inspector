@@ -7,7 +7,7 @@ names: ['Hardhat', 'Person', 'Safety Vest']
 
 roboflow:
   workspace: naufal-dzaki
-  project: compfest-dataset-merge-2
+  project: 4-compfest-dataset-merge
   version: 1
   license: CC BY 4.0
-  url: https://universe.roboflow.com/naufal-dzaki/compfest-dataset-merge-2/dataset/1
+  url: https://universe.roboflow.com/naufal-dzaki/4-compfest-dataset-merge/dataset/1

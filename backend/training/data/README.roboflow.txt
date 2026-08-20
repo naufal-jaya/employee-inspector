@@ -1,8 +1,8 @@
 
-Compfest dataset merge 2 - v1 2026-08-14 9:35pm
+4 Compfest dataset merge  - v1 2026-08-20 8:44pm
 ==============================
 
-This dataset was exported via roboflow.com on August 14, 2026 at 2:39 PM GMT
+This dataset was exported via roboflow.com on August 20, 2026 at 1:48 PM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects
@@ -17,8 +17,8 @@ visit https://github.com/roboflow/notebooks
 
 To find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com
 
-The dataset includes 8166 images.
-Objects-person-personh-persons are annotated in YOLOv8 format.
+The dataset includes 1408 images.
+Objects-PPE-person-persons-FIr6 are annotated in YOLOv8 format.
 
 The following pre-processing was applied to each image:
 
