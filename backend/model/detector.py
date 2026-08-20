@@ -29,8 +29,6 @@ class PPEDetector:
             
         self.ppe_model = YOLO(ppe_weights_path)
         self.confidence_threshold = confidence_threshold
-        # Lower threshold for Person — recovers recall on PPE-context images immediately
-        self.person_conf_threshold = 0.15
         self.ppe_class_names = self.ppe_model.names  # dict[int, str]
 
     def predict(self, image: np.ndarray) -> List[Detection]:
@@ -38,11 +36,10 @@ class PPEDetector:
         Run one synchronous inference pass on a single image (H, W, 3 - BGR or RGB).
         Returns a flat list of Detection objects.
         """
-        # Run prediction with the lowest required threshold so we get all potential boxes
-        min_conf = min(self.confidence_threshold, self.person_conf_threshold)
         results = self.ppe_model.predict(
             source=image,
-            conf=min_conf,
+            conf=self.confidence_threshold,
+            imgsz=1088,
             verbose=False,
         )
 
@@ -54,11 +51,6 @@ class PPEDetector:
                 class_name = self.ppe_class_names[cls_id]
                 conf = float(box.conf[0])
                 
-                # Apply class-specific confidence thresholds
-                req_conf = self.person_conf_threshold if class_name == "Person" else self.confidence_threshold
-                if conf < req_conf:
-                    continue
-
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 detections.append(Detection(class_name=class_name, confidence=conf, bbox=[x1, y1, x2, y2]))
 
@@ -74,11 +66,11 @@ class PPEDetector:
         """
         # Track all classes using the custom ByteTrack config tuned for workplace stability.
         _tracker_cfg = os.path.join(os.path.dirname(__file__), "bytetrack_workplace.yaml")
-        min_conf = min(self.confidence_threshold, self.person_conf_threshold)
         
         results = self.ppe_model.track(
             source=image,
-            conf=min_conf,
+            conf=self.confidence_threshold,
+            imgsz=1088,
             persist=True,
             verbose=False,
             tracker=_tracker_cfg,
@@ -92,11 +84,6 @@ class PPEDetector:
                 cls_id = int(box.cls[0])
                 class_name = self.ppe_class_names[cls_id]
                 conf = float(box.conf[0])
-                
-                # Apply class-specific confidence thresholds
-                req_conf = self.person_conf_threshold if class_name == "Person" else self.confidence_threshold
-                if conf < req_conf:
-                    continue
                     
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 tid = int(box.id[0]) if box.id is not None else (i + 1)

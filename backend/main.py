@@ -72,8 +72,11 @@ def _get_class_color(class_name: str) -> tuple:
 def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_results: list) -> np.ndarray:
     annotated = image_bgr.copy()
     
-    # 1. Draw bounding boxes for ALL detected objects (PPE, Persons, Hazards, Equipment)
+    # 1. Draw bounding boxes for ALL detected objects EXCEPT Person
     for d in detections:
+        if d.class_name == "Person":
+            continue
+            
         x1, y1, x2, y2 = [int(v) for v in d.bbox]
         color = _get_class_color(d.class_name)
         label = f"{d.class_name} {d.confidence * 100:.1f}%"
@@ -90,11 +93,12 @@ def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_result
             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA
         )
 
-    # 2. Draw person compliance summary overlay
+    # 2. Draw person compliance summary overlay + confidence
     for r in compliance_results:
         x1, y1, x2, y2 = [int(v) for v in r["person_bbox"]]
         comp_color = (0, 200, 0) if r["compliance_status"] == "Compliant" else (0, 0, 220)
-        status_label = f"Person #{r['person_id']} [{r['compliance_status']}]"
+        conf_pct = r.get("person_confidence", 0.0) * 100
+        status_label = f"Person #{r['person_id']} {conf_pct:.1f}% [{r['compliance_status']}]"
 
         # Draw a subtle double border for person boxes
         cv2.rectangle(annotated, (x1 - 2, y1 - 2), (x2 + 2, y2 + 2), comp_color, 1)

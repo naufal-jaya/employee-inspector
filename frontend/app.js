@@ -124,15 +124,23 @@ function renderImageResults(data) {
   setText("imgObjectCount", `${allObjects.length} item${allObjects.length !== 1 ? "s" : ""}`);
   const objectsGrid = document.getElementById("imgObjectsGrid");
   if (objectsGrid) {
+    let personCounter = 0;
     objectsGrid.innerHTML = allObjects.length
-      ? allObjects.map((obj) => `
+      ? allObjects.map((obj) => {
+          let displayName = obj.class_name;
+          if (displayName === "Person") {
+            personCounter++;
+            displayName = `Person ${personCounter}`;
+          }
+          return `
         <div class="object-chip object-chip--${getCategoryClass(obj.category)}">
           <div class="object-chip__header">
-            <span class="object-chip__name">${escapeHtml(obj.class_name)}</span>
+            <span class="object-chip__name">${escapeHtml(displayName)}</span>
             <span class="object-chip__conf">${obj.confidence_percent || `${(obj.confidence * 100).toFixed(1)}%`}</span>
           </div>
           <div class="object-chip__meta">${obj.category}</div>
-        </div>`).join("")
+        </div>`;
+        }).join("")
       : `<p class="empty-text">No objects detected.</p>`;
   }
 
@@ -140,12 +148,12 @@ function renderImageResults(data) {
   if (resultList) {
     const results = data.results || [];
     resultList.innerHTML = results.length
-      ? results.map((p) => buildPersonCard(p)).join("")
+      ? results.map((p, index) => buildPersonCard(p, index)).join("")
       : `<p class="empty-text">No persons detected.</p>`;
   }
 }
 
-function buildPersonCard(person) {
+function buildPersonCard(person, index) {
   const isCompliant = person.compliance_status === "Compliant";
   const missingHtml = person.missing_ppe?.length
     ? person.missing_ppe.map((i) => `<span class="badge badge--bad">${escapeHtml(i)}</span>`).join(" ")
@@ -153,10 +161,14 @@ function buildPersonCard(person) {
   const presentHtml = person.detected_ppe?.length
     ? person.detected_ppe.map((i) => `<span class="badge badge--ok">${escapeHtml(i)}</span>`).join(" ")
     : `<span class="badge badge--muted">None detected</span>`;
+  
+  // Use array index (1-based) if provided, otherwise fallback to person_id
+  const workerNumber = index !== undefined ? index + 1 : person.person_id;
+  
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
       <div class="result-card__title">
-        <span>Worker #${person.person_id}</span>
+        <span>Worker #${workerNumber}</span>
         <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
       </div>
       <div class="result-card__meta">

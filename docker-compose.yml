@@ -9,7 +9,7 @@ services:
       - ./backend/model/weights:/app/model/weights:ro
     environment:
       - MODEL_WEIGHTS_PATH=/app/model/weights/best.pt
-      - CONFIDENCE_THRESHOLD=0.4
+      - CONFIDENCE_THRESHOLD=0.5
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
     restart: unless-stopped
 
@@ -18,8 +18,6 @@ services:
     container_name: ppe-frontend
     ports:
       - "3000:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
     depends_on:
       - backend
     restart: unless-stopped

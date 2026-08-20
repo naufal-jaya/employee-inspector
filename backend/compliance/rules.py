@@ -129,6 +129,7 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
             "person_id": idx,
             "track_id": getattr(bucket["person"], "track_id", -1),
             "person_bbox": bucket["person"].bbox,
+            "person_confidence": bucket["person"].confidence,
             "detected_ppe": sorted(bucket["detected"]),
             "missing_ppe": sorted(missing),
             "compliance_status": "Non-compliant" if missing else "Compliant",
