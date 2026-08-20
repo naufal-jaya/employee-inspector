@@ -222,7 +222,7 @@ async function analyzeVideo() {
   const analyzeBtn = document.getElementById("analyzeVideoBtn");
   const resultPanel = document.getElementById("videoResultPanel");
 
-  setButtonLoading(analyzeBtn, true, "Memproses — ini bisa memakan waktu...");
+  setButtonLoading(analyzeBtn, true, "Memproses... bisa memakan waktu beberapa saat");
   showStatus("videoStatusMsg", "Mengirim video ke server untuk analisis per-frame...");
   if (resultPanel) resultPanel.hidden = true;
 
