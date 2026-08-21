@@ -60,6 +60,23 @@ function initImageTab() {
   setupDropzone(dropzone, fileInput, "image/*", (file) => handleImageSelect(file));
 
   if (analyzeBtn) analyzeBtn.addEventListener("click", analyzeImage);
+  
+  const demoBtn = document.getElementById("demoImageBtn");
+  if (demoBtn) demoBtn.addEventListener("click", loadDemoImage);
+}
+
+async function loadDemoImage() {
+  try {
+    const res = await fetch("assets/demo-image.png");
+    const blob = await res.blob();
+    const file = new File([blob], "demo-image.png", { type: "image/png" });
+    handleImageSelect(file);
+    setTimeout(() => {
+      document.getElementById("analyzeImageBtn").click();
+    }, 300);
+  } catch (err) {
+    showStatus("imageStatusMsg", "Gagal memuat gambar demo.", true);
+  }
 }
 
 function handleImageSelect(file) {
@@ -93,6 +110,7 @@ async function analyzeImage() {
 
   setButtonLoading(analyzeBtn, true, "Menganalisis...");
   showStatus("imageStatusMsg", "Menganalisis gambar & aturan keselamatan...");
+  showLoading(true);
   if (resultPanel) resultPanel.hidden = true;
 
   try {
@@ -111,6 +129,7 @@ async function analyzeImage() {
     showStatus("imageStatusMsg", `Analisis gagal: ${err.message}`, true);
   } finally {
     setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analisis Gambar');
+    showLoading(false);
   }
 }
 
@@ -122,7 +141,7 @@ function renderImageResults(data) {
   if (annotatedImage && data.annotated_image) annotatedImage.src = data.annotated_image;
 
   const s = data.summary || {};
-  setText("imgMetricScore", `${s.safety_score ?? 0}%`);
+  updateGaugeChart("imgMetricScore", s.safety_score ?? 0);
   setText("imgMetricObjects", s.total_objects ?? 0);
   setText("imgMetricPersons", s.person_count ?? 0);
   setText("imgMetricViolations", s.violations_count ?? 0);
@@ -236,6 +255,7 @@ async function analyzeVideo() {
 
   setButtonLoading(analyzeBtn, true, "Memproses... bisa memakan waktu beberapa saat");
   showStatus("videoStatusMsg", "Mengirim video ke server untuk analisis per-frame...");
+  showLoading(true);
   if (resultPanel) resultPanel.hidden = true;
 
   try {
@@ -254,6 +274,7 @@ async function analyzeVideo() {
     showStatus("videoStatusMsg", `Analisis video gagal: ${err.message}`, true);
   } finally {
     setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Proses Video');
+    showLoading(false);
   }
 }
 
@@ -569,4 +590,24 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = String(str);
   return div.innerHTML;
+}
+
+function showLoading(show) {
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.hidden = !show;
+}
+
+function updateGaugeChart(id, score) {
+  setText(id, `${score}%`);
+  const fill = document.getElementById(id.replace("MetricScore", "GaugeFill"));
+  if (fill) {
+    // Semi-circle with r=40 -> PI * r = 125.66
+    const maxDash = 125.66;
+    const dash = maxDash - (score / 100) * maxDash;
+    fill.style.strokeDashoffset = dash;
+    
+    if (score >= 80) fill.style.stroke = "var(--ok)";
+    else if (score >= 50) fill.style.stroke = "var(--warn)";
+    else fill.style.stroke = "var(--bad)";
+  }
 }
