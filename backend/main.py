@@ -217,12 +217,19 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # OpenCV cannot write H.264 directly (codec is proprietary).
         # Write a raw mp4v temp file first, then re-encode to H.264 with ffmpeg.
-        raw_filename = f"{uuid.uuid4().hex}_raw.mp4"
-        raw_path = os.path.join(VIDEO_OUTPUT_DIR, raw_filename)
-        output_filename = f"{uuid.uuid4().hex}.mp4"
-        output_path = os.path.join(VIDEO_OUTPUT_DIR, output_filename)
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        writer = cv2.VideoWriter(raw_path, fourcc, fps, (width, height))
+        
+        raw_filename_high = f"{uuid.uuid4().hex}_high_raw.mp4"
+        raw_path_high = os.path.join(VIDEO_OUTPUT_DIR, raw_filename_high)
+        output_filename_high = f"{uuid.uuid4().hex}_high.mp4"
+        output_path_high = os.path.join(VIDEO_OUTPUT_DIR, output_filename_high)
+        writer_high = cv2.VideoWriter(raw_path_high, fourcc, fps, (width, height))
+
+        raw_filename_low = f"{uuid.uuid4().hex}_low_raw.mp4"
+        raw_path_low = os.path.join(VIDEO_OUTPUT_DIR, raw_filename_low)
+        output_filename_low = f"{uuid.uuid4().hex}_low.mp4"
+        output_path_low = os.path.join(VIDEO_OUTPUT_DIR, output_filename_low)
+        writer_low = cv2.VideoWriter(raw_path_low, fourcc, fps, (width, height))
 
         # Reset tracker state for a fresh video
         try:
@@ -239,36 +246,44 @@ async def analyze_video(video: UploadFile = File(...)):
             if not ret:
                 break
 
-            # Run dual-model tracked inference
-            detections = detector.predict_tracked(frame)
+            # Run dual-model tracked inference (Returns all detections >= 20%)
+            detections_low = detector.predict_tracked(frame)
 
-            # Rule-based compliance layer
-            compliance_results = analyze_compliance(detections)
-            per_frame_results.append(compliance_results)
+            # Low Confidence Pipeline
+            compliance_results_low = analyze_compliance(detections_low)
+            annotated_frame_low = _draw_annotations(frame.copy(), detections_low, compliance_results_low)
+            writer_low.write(annotated_frame_low)
 
-            # Draw bounding boxes for all detections
-            annotated_frame = _draw_annotations(frame, detections, compliance_results)
-            writer.write(annotated_frame)
+            # High Confidence Pipeline (Filter out anything < 50%)
+            detections_high = [d for d in detections_low if d.confidence >= 0.5]
+            compliance_results_high = analyze_compliance(detections_high)
+            annotated_frame_high = _draw_annotations(frame.copy(), detections_high, compliance_results_high)
+            writer_high.write(annotated_frame_high)
+
+            # Keep temporal summary based on High Confidence
+            per_frame_results.append(compliance_results_high)
 
         cap.release()
-        writer.release()
+        writer_high.release()
+        writer_low.release()
 
         # Re-encode raw mp4v → H.264 so browsers can play it natively
-        subprocess.run(
-            [
-                "ffmpeg", "-y",
-                "-i", raw_path,
-                "-vcodec", "libx264",
-                "-preset", "fast",
-                "-crf", "23",
-                "-pix_fmt", "yuv420p",   # required for broad browser compatibility
-                "-movflags", "+faststart", # moves moov atom to front for streaming
-                output_path,
-            ],
-            check=True,
-            capture_output=True,
-        )
-        os.unlink(raw_path)  # clean up the raw temp file
+        for r_path, o_path in [(raw_path_high, output_path_high), (raw_path_low, output_path_low)]:
+            subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-i", r_path,
+                    "-vcodec", "libx264",
+                    "-preset", "fast",
+                    "-crf", "23",
+                    "-pix_fmt", "yuv420p",
+                    "-movflags", "+faststart",
+                    o_path,
+                ],
+                check=True,
+                capture_output=True,
+            )
+            os.unlink(r_path)  # clean up the raw temp file
 
         # Build temporal report
         temporal_summary = build_temporal_report(per_frame_results, fps)
@@ -277,7 +292,8 @@ async def analyze_video(video: UploadFile = File(...)):
         os.unlink(input_path)
 
     return {
-        "video_url": f"/api/video/{output_filename}",
+        "video_url_high_conf": f"/api/video/{output_filename_high}",
+        "video_url_low_conf": f"/api/video/{output_filename_low}",
         "fps": round(fps, 2),
         "temporal_summary": temporal_summary,
     }

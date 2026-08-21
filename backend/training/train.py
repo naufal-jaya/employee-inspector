@@ -32,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description="Fine-tune YOLOv8 for PPE detection")
     parser.add_argument("--data", type=str, default="./data/data.yaml",
                          help="Path to dataset's data.yaml (YOLO format)")
-    parser.add_argument("--base-model", type=str, default="yolov8n.pt",
+    parser.add_argument("--base-model", type=str, default="yolov8s.pt",
                          help="Pretrained base checkpoint to fine-tune from")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--imgsz", type=int, default=640)

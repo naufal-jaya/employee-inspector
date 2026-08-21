@@ -9,7 +9,7 @@ services:
       - ./backend/model/weights:/app/model/weights:ro
     environment:
       - MODEL_WEIGHTS_PATH=/app/model/weights/best.pt
-      - CONFIDENCE_THRESHOLD=0.5
+      - CONFIDENCE_THRESHOLD=0.2
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
     restart: unless-stopped
 
