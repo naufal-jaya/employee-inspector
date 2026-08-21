@@ -144,6 +144,7 @@ Response:
       "person_id": 1,
       "track_id": -1,
       "person_bbox": [120, 45, 310, 480],
+      "person_confidence": 0.95,
       "detected_ppe": ["Safety Vest"],
       "worn_ppe": ["Safety Vest"],
       "carried_ppe": ["Hardhat"],
@@ -160,10 +161,35 @@ Response:
 
 ### `POST /api/analyze-video` — analisis video (per-frame + tracking)
 
-Multipart form-data, field `video`. Mengembalikan `video_url` (hasil
-anotasi, H.264) + `temporal_summary` agregasi per `track_id` (detik patuh/
-melanggar, laju kepatuhan, pelanggaran utama). Tetap satu input → satu
-output yang sinkron & stateless, sesuai batasan MVP.
+Multipart form-data, field `video`. Mengembalikan **dua video** hasil anotasi
+(H.264) dengan tingkat kepercayaan berbeda, serta `temporal_summary` agregasi
+per `track_id` (detik patuh/melanggar, laju kepatuhan, pelanggaran utama).
+Tetap satu input → satu output yang sinkron & stateless, sesuai batasan MVP.
+
+Response:
+
+```json
+{
+  "video_url_high_conf": "/api/video/<uuid>_high.mp4",
+  "video_url_low_conf": "/api/video/<uuid>_low.mp4",
+  "fps": 25.0,
+  "temporal_summary": [
+    {
+      "track_id": 1,
+      "total_seconds_visible": 10.5,
+      "compliant_seconds": 8.0,
+      "violation_seconds": 2.5,
+      "compliance_rate": 76.2,
+      "primary_violation": "Hardhat"
+    }
+  ]
+}
+```
+
+- `video_url_high_conf`: video anotasi dengan filter kepercayaan tinggi (≥50%)
+  — hanya deteksi yang sangat yakin, cocok untuk laporan final.
+- `video_url_low_conf`: video anotasi dengan sensitivitas penuh (≥20%)
+  — menampilkan semua deteksi termasuk yang kurang yakin, cocok untuk review.
 
 ### `GET /health` — status model
 

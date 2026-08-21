@@ -85,4 +85,5 @@ yarn-error.log*
 # OpenCode tooling (local agent config, not part of the deliverable)
 .opencode/
 .agents/
+openspec/
 skills-lock.json

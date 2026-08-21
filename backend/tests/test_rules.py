@@ -58,6 +58,7 @@ def test_worn_ppe_is_compliant():
     assert r["carried_ppe"] == []
     assert r["missing_ppe"] == []
     assert r["compliance_status"] == "Compliant"
+    assert r["person_confidence"] == 0.9
 
 
 def test_carried_ppe_is_violation():
@@ -73,6 +74,7 @@ def test_carried_ppe_is_violation():
     assert r["carried_ppe"] == ["Hardhat"]
     assert "Hardhat" in r["missing_ppe"]
     assert r["compliance_status"] == "Non-compliant"
+    assert r["person_confidence"] == 0.9
 
 
 def test_uncertain_never_accuses():
@@ -92,6 +94,22 @@ def test_uncertain_never_accuses():
     assert set(r["detected_ppe"]) == {"Hardhat", "Safety Vest"}
     assert r["missing_ppe"] == []
     assert r["compliance_status"] == "Compliant"
+    assert r["person_confidence"] == 0.9
+
+
+def test_explicit_negative_class_is_violation():
+    """NO-Hardhat detection should directly mark Hardhat as missing."""
+    person = _person()
+    no_hardhat = Detection(class_name="NO-Hardhat", confidence=0.85, bbox=[145, 110, 155, 135])
+    vest = Detection(class_name="Safety Vest", confidence=0.9, bbox=[145, 300, 155, 360])
+
+    results = analyze_compliance([person, no_hardhat, vest])
+
+    assert len(results) == 1
+    r = results[0]
+    assert "Hardhat" in r["missing_ppe"]
+    assert r["compliance_status"] == "Non-compliant"
+    assert r["risk_level"] == "High"
 
 
 def test_standing_person_is_not_fallen():
