@@ -90,25 +90,14 @@
               <span>Mendukung JPG, PNG, WebP</span>
             </div>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button id="demoImageBtn" class="btn" style="flex: 1;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
-              Coba Demo
-            </button>
-            <button id="analyzeImageBtn" class="btn btn--primary" disabled style="flex: 2;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              Analisis Gambar
-            </button>
-          </div>
+          <button id="analyzeImageBtn" class="btn btn--primary" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            Analisis Gambar
+          </button>
         </div>
 
         <p id="imageStatusMsg" class="status-msg" aria-live="polite"></p>
@@ -125,15 +114,9 @@
 
           <div class="result-panel__right">
             <div class="metrics-grid">
-              <div class="metric-card metric-card--gauge" id="imgMetricScoreCard">
-                <div class="gauge-container">
-                  <svg class="gauge-svg" viewBox="0 0 100 50">
-                    <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="12" stroke-linecap="round"></path>
-                    <path class="gauge-fill" id="imgGaugeFill" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="125.6"></path>
-                  </svg>
-                  <span class="gauge-value" id="imgMetricScore">—</span>
-                </div>
-                <span class="metric-card__label" style="text-align: center; margin-top: -5px;">Skor Risiko</span>
+              <div class="metric-card metric-card--ok">
+                <span class="metric-card__value" id="imgMetricScore">—</span>
+                <span class="metric-card__label">Skor Keselamatan</span>
               </div>
               <div class="metric-card">
                 <span class="metric-card__value" id="imgMetricObjects">—</span>
@@ -148,8 +131,8 @@
                 <span class="metric-card__label">Pelanggaran</span>
               </div>
               <div class="metric-card metric-card--warn">
-                <span class="metric-card__value" id="imgMetricHazards">—</span>
-                <span class="metric-card__label">Bahaya</span>
+                <span class="metric-card__value" id="imgMetricRisk">—</span>
+                <span class="metric-card__label">Skor Risiko</span>
               </div>
             </div>
 

@@ -583,50 +583,6 @@ body {
   .metric-card__value { font-size: 1.45rem; }
 }
 
-/* ─── Gauge Chart ─────────────────────────────── */
-.metric-card--gauge {
-  grid-column: span 2;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
-  background: var(--card);
-}
-
-.gauge-container {
-  position: relative;
-  width: 140px;
-  height: 70px;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-.gauge-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.gauge-bg {
-  stroke: var(--border);
-}
-
-.gauge-fill {
-  stroke: var(--ok);
-  transition: stroke-dashoffset 1s ease-out, stroke 0.5s ease;
-}
-
-.gauge-value {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
-}
-
 /* ─── Loading Overlay ─────────────────────────── */
 .loading-overlay {
   position: fixed;
