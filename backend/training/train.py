@@ -32,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description="Fine-tune YOLOv8 for PPE detection")
     parser.add_argument("--data", type=str, default="./data/data.yaml",
                          help="Path to dataset's data.yaml (YOLO format)")
-    parser.add_argument("--base-model", type=str, default="yolov8n.pt",
+    parser.add_argument("--base-model", type=str, default="yolov8s.pt",
                          help="Pretrained base checkpoint to fine-tune from")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--imgsz", type=int, default=640)
@@ -48,6 +48,11 @@ def main():
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
+        freeze=0,             # Fully unfreeze — enough data to fine-tune end-to-end
+        hsv_s=0.5,            # Mild saturation randomize, not aggressive
+        lr0=0.001,            # Smoother LR for full fine-tune
+        cos_lr=True,          # Cosine LR decay — better convergence
+        close_mosaic=10,      # Disable mosaic for last 10 epochs — helps precise localization
         patience=10,          # early stop if val metrics plateau
         project="runs/detect",
         name="ppe_finetune",

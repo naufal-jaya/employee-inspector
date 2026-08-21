@@ -1,13 +1,13 @@
-train: ./train/images
-val: ./valid/images
-test: ./test/images
+train: ../train/images
+val: ../valid/images
+test: ../test/images
 
 nc: 3
-names: ['Hardhat', 'Safety Vest', 'Person']
+names: ['Hardhat', 'Person', 'Safety Vest']
 
 roboflow:
-  workspace: safetyeyefinetuningdata
-  project: worker-6qxik
-  version: 2
+  workspace: naufal-dzaki
+  project: 4-compfest-dataset-merge
+  version: 1
   license: CC BY 4.0
-  url: https://universe.roboflow.com/safetyeyefinetuningdata/worker-6qxik/dataset/2
+  url: https://universe.roboflow.com/naufal-dzaki/4-compfest-dataset-merge/dataset/1

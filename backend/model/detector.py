@@ -152,6 +152,7 @@ class PPEDetector:
         ppe_results = self.ppe_model.predict(
             source=image,
             conf=self.confidence_threshold,
+            imgsz=1088,
             verbose=False,
         )
 
@@ -182,6 +183,7 @@ class PPEDetector:
                 if class_name == "Person":
                     continue  # Ignore fine-tuned person detections, rely on pose model
                 conf = float(box.conf[0])
+                
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 detections.append(Detection(class_name=class_name, confidence=conf, bbox=[x1, y1, x2, y2]))
 
@@ -201,24 +203,24 @@ class PPEDetector:
         Call `person_model.predictor.trackers[0].reset()` to reset state
         between separate videos.
         """
-        # 1. Track Persons — assigns persistent track IDs across frames
-        # Use a custom ByteTrack config tuned for workplace stability:
-        # higher track_buffer to survive occlusions, stricter new_track_thresh
-        # to prevent ghost track births from low-confidence detections.
+        # Track all classes using the custom ByteTrack config tuned for workplace stability.
         _tracker_cfg = os.path.join(os.path.dirname(__file__), "bytetrack_workplace.yaml")
+        
+        # Track persons with pose model for keypoints + stable IDs
         person_results = self.person_model.track(
             source=image,
-            conf=0.4,   # raised from 0.25 — eliminates jittery false detections
+            conf=0.25,
             classes=[0],
             persist=True,
             verbose=False,
             tracker=_tracker_cfg,
         )
 
-        # 2. Detect PPE (no tracking needed, just find what's there)
+        # Detect PPE with the fine-tuned model (no tracking needed for PPE items)
         ppe_results = self.ppe_model.predict(
             source=image,
             conf=self.confidence_threshold,
+            imgsz=1088,
             verbose=False,
         )
 
@@ -230,8 +232,8 @@ class PPEDetector:
             boxes = person_results[0].boxes
             for i, box in enumerate(boxes):
                 conf = float(box.conf[0])
+                    
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
-                # track_id is available only when tracking succeeded
                 tid = int(box.id[0]) if box.id is not None else (i + 1)
                 xy, kconf = self._extract_keypoints(person_results[0], i)
                 det = Detection(

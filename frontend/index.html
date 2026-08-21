@@ -181,13 +181,24 @@
         <p id="videoStatusMsg" class="status-msg" aria-live="polite"></p>
 
         <section class="result-panel result-panel--video" id="videoResultPanel" hidden>
+          <!-- Left: Annotated Video Players (Dual Confidence) -->
           <div class="result-panel__left">
             <div class="panel-header">
-              <h3>Video Hasil Anotasi</h3>
-              <span class="badge badge--ok">Full FPS</span>
+              <h3>Kepercayaan Tinggi (50%)</h3>
+              <span class="badge badge--live">Terfilter</span>
             </div>
             <div class="result-panel__image">
-              <video id="annotatedVideo" controls playsinline class="annotated-video">
+              <video id="annotatedVideoHigh" controls playsinline class="annotated-video" style="margin-bottom: 2rem;">
+                Browser Anda tidak mendukung pemutar video HTML5.
+              </video>
+            </div>
+            
+            <div class="panel-header">
+              <h3>Kepercayaan Rendah (20%)</h3>
+              <span class="badge badge--error">Sensitivitas Penuh</span>
+            </div>
+            <div class="result-panel__image">
+              <video id="annotatedVideoLow" controls playsinline class="annotated-video">
                 Browser Anda tidak mendukung pemutar video HTML5.
               </video>
             </div>

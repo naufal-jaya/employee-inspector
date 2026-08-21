@@ -132,15 +132,23 @@ function renderImageResults(data) {
   setText("imgObjectCount", `${allObjects.length} objek`);
   const objectsGrid = document.getElementById("imgObjectsGrid");
   if (objectsGrid) {
+    let personCounter = 0;
     objectsGrid.innerHTML = allObjects.length
-      ? allObjects.map((obj) => `
+      ? allObjects.map((obj) => {
+          let displayName = obj.class_name;
+          if (displayName === "Person") {
+            personCounter++;
+            displayName = `Person ${personCounter}`;
+          }
+          return `
         <div class="object-chip object-chip--${getCategoryClass(obj.category)}">
           <div class="object-chip__header">
-            <span class="object-chip__name">${escapeHtml(obj.class_name)}</span>
+            <span class="object-chip__name">${escapeHtml(displayName)}</span>
             <span class="object-chip__conf">${obj.confidence_percent || `${(obj.confidence * 100).toFixed(1)}%`}</span>
           </div>
           <div class="object-chip__meta">${obj.category}</div>
-        </div>`).join("")
+        </div>`;
+        }).join("")
       : `<p class="empty-text">Tidak ada objek terdeteksi.</p>`;
   }
 
@@ -148,12 +156,12 @@ function renderImageResults(data) {
   if (resultList) {
     const results = data.results || [];
     resultList.innerHTML = results.length
-      ? results.map((p) => buildPersonCard(p)).join("")
+      ? results.map((p, index) => buildPersonCard(p, index)).join("")
       : `<p class="empty-text">Tidak ada orang terdeteksi.</p>`;
   }
 }
 
-function buildPersonCard(person) {
+function buildPersonCard(person, index) {
   const isCompliant = person.compliance_status === "Compliant";
   const missingHtml = person.missing_ppe?.length
     ? person.missing_ppe.map((i) => `<span class="badge badge--bad">${escapeHtml(i)}</span>`).join(" ")
@@ -167,10 +175,14 @@ function buildPersonCard(person) {
   const carriedLine = carriedHtml
     ? `<span>Dibawa (tidak dipakai): ${carriedHtml}</span>`
     : "";
+  
+  // Use array index (1-based) if provided, otherwise fallback to person_id
+  const workerNumber = index !== undefined ? index + 1 : person.person_id;
+  
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
       <div class="result-card__title">
-        <span>Pekerja #${person.person_id}</span>
+        <span>Pekerja #${workerNumber}</span>
         <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "PATUH" : "PELANGGARAN"}</span>
       </div>
       <div class="result-card__meta">
@@ -249,11 +261,17 @@ function renderVideoResults(data) {
   const resultPanel = document.getElementById("videoResultPanel");
   if (resultPanel) resultPanel.hidden = false;
 
-  // Video player
-  const videoEl = document.getElementById("annotatedVideo");
-  if (videoEl && data.video_url) {
-    videoEl.src = `${API_BASE}${data.video_url}`;
-    videoEl.load();
+  // Video players (dual confidence)
+  const videoHighEl = document.getElementById("annotatedVideoHigh");
+  if (videoHighEl && data.video_url_high_conf) {
+    videoHighEl.src = `${API_BASE}${data.video_url_high_conf}`;
+    videoHighEl.load();
+  }
+
+  const videoLowEl = document.getElementById("annotatedVideoLow");
+  if (videoLowEl && data.video_url_low_conf) {
+    videoLowEl.src = `${API_BASE}${data.video_url_low_conf}`;
+    videoLowEl.load();
   }
 
   const summary = data.temporal_summary || [];

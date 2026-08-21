@@ -11,7 +11,7 @@ services:
       - MODEL_WEIGHTS_PATH=/app/model/weights/best.pt
       - BASE_MODEL_PATH=/app/model/weights/yolov8n.pt
       - POSE_MODEL_PATH=/app/model/weights/yolov8n-pose.pt
-      - CONFIDENCE_THRESHOLD=0.4
+      - CONFIDENCE_THRESHOLD=0.2
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
 
@@ -20,10 +20,6 @@ services:
     container_name: ppe-frontend
     ports:
       - "3000:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
     depends_on:
       - backend
     restart: unless-stopped
-
-
