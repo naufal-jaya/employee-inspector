@@ -57,9 +57,9 @@ sama (sinkron & stateless).
 pretrained yang dipakai untuk mendeteksi orang + keypoint. Tidak di-fine-tune.
 
 **Model APD (fine-tuned):** `best.pt`, di-fine-tune dari `yolov8n.pt`
-(pretrained COCO) ke domain APD konstruksi memakai dataset publik **"worker"**
-(Roboflow Universe, `safetyeyefinetuningdata/worker-6qxik`, v2, lisensi
-CC BY 4.0 — 8.551 gambar):
+(pretrained COCO) ke domain APD konstruksi memakai dataset publik
+(Roboflow Universe, `naufal-dzaki/4-compfest-dataset-merge`, lisensi
+CC BY 4.0):
 
 ```
 nc: 3

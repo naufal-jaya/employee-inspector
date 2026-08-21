@@ -222,7 +222,6 @@ async def analyze_video(video: UploadFile = File(...)):
     if detector is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
-    allowed_types = ("video/mp4", "video/webm", "video/avi", "video/quicktime", "video/x-matroska")
     if not video.content_type or not video.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="File must be a video")
 
@@ -261,9 +260,9 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # Reset tracker state for a fresh video
         try:
-            if hasattr(detector.ppe_model, "predictor") and detector.ppe_model.predictor is not None:
-                if hasattr(detector.ppe_model.predictor, "trackers") and detector.ppe_model.predictor.trackers:
-                    detector.ppe_model.predictor.trackers[0].reset()
+            if hasattr(detector.person_model, "predictor") and detector.person_model.predictor is not None:
+                if hasattr(detector.person_model.predictor, "trackers") and detector.person_model.predictor.trackers:
+                    detector.person_model.predictor.trackers[0].reset()
         except Exception:
             pass  # Safe to ignore — tracker resets on new source anyway
 
