@@ -127,12 +127,12 @@ function renderImageResults(data) {
     let personCounter = 0;
     objectsGrid.innerHTML = allObjects.length
       ? allObjects.map((obj) => {
-          let displayName = obj.class_name;
-          if (displayName === "Person") {
-            personCounter++;
-            displayName = `Person ${personCounter}`;
-          }
-          return `
+        let displayName = obj.class_name;
+        if (displayName === "Person") {
+          personCounter++;
+          displayName = `Person ${personCounter}`;
+        }
+        return `
         <div class="object-chip object-chip--${getCategoryClass(obj.category)}">
           <div class="object-chip__header">
             <span class="object-chip__name">${escapeHtml(displayName)}</span>
@@ -140,7 +140,7 @@ function renderImageResults(data) {
           </div>
           <div class="object-chip__meta">${obj.category}</div>
         </div>`;
-        }).join("")
+      }).join("")
       : `<p class="empty-text">No objects detected.</p>`;
   }
 
@@ -161,10 +161,10 @@ function buildPersonCard(person, index) {
   const presentHtml = person.detected_ppe?.length
     ? person.detected_ppe.map((i) => `<span class="badge badge--ok">${escapeHtml(i)}</span>`).join(" ")
     : `<span class="badge badge--muted">None detected</span>`;
-  
+
   // Use array index (1-based) if provided, otherwise fallback to person_id
   const workerNumber = index !== undefined ? index + 1 : person.person_id;
-  
+
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
       <div class="result-card__title">
