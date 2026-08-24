@@ -434,7 +434,7 @@ function renderLiveResults(data) {
   }
 
   const s = data.summary || {};
-  setText("liveMetricRisk", `${s.risk_score ?? 0} / 100`);
+  setText("liveMetricObjects", s.total_objects ?? 0);
   setText("liveMetricPersons", s.person_count ?? 0);
   setText("liveMetricViolations", s.violations_count ?? 0);
   setText("liveMetricHazards", s.hazard_count ?? 0);
