@@ -129,10 +129,6 @@
                 <span class="metric-card__value metric-card__value--bad" id="imgMetricViolations">—</span>
                 <span class="metric-card__label">Violations</span>
               </div>
-              <div class="metric-card metric-card--warn">
-                <span class="metric-card__value" id="imgMetricRisk">—</span>
-                <span class="metric-card__label">Risk Score</span>
-              </div>
             </div>
 
             <div class="details-section">
@@ -285,6 +281,12 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- Global Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay" hidden>
+    <div class="spinner"></div>
+    <p>Analyzing...</p>
   </div>
 
   <script src="app.js"></script>
