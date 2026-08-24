@@ -33,7 +33,7 @@ from model.detector import PPEDetector
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
 BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
 POSE_MODEL_PATH = os.getenv("POSE_MODEL_PATH", "model/weights/yolov8n-pose.pt")
-CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.2"))
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.45"))
 VIDEO_OUTPUT_DIR = "/tmp/ppe_videos"
 
 app = FastAPI(title="PPE Compliance Detection API", version="1.0.0")
