@@ -50,7 +50,7 @@ PERSON_CLASS = "Person"
 ASSOCIATION_MARGIN_PX = 15  # tolerance when checking if a PPE box "belongs" to a person
 # Distance (as a fraction of the person box height) inside which a PPE item
 # counts as worn on its body region.
-VERIFY_MARGIN_RATIO = 0.15
+VERIFY_MARGIN_RATIO = 0.40
 
 
 def _center(bbox: List[float]):
@@ -82,7 +82,7 @@ def _verify_ppe_worn(item: Detection, person: Detection) -> str:
     Pose-aware verification of a single PPE item against a person.
 
     Returns one of:
-      - "worn":      item center is inside the correct body region (keypoints ok)
+      - "worn":      item is on the correct body region
       - "carried":   keypoints ok but item is far from its body region
       - "uncertain": keypoints unavailable/unreliable -> fall back to legacy logic
     """
@@ -90,6 +90,27 @@ def _verify_ppe_worn(item: Detection, person: Detection) -> str:
     if region is None:
         return "worn"  # item not in schema -> no verification needed
 
+    # --- Spatial fallback: if the PPE bounding box overlaps the correct
+    #     vertical zone of the person, count it as worn regardless of
+    #     keypoint distance.  Helmets sit *above* the head keypoints and
+    #     safety vests span a large area, so pure keypoint-distance
+    #     checks produce far too many false "carried" results. ----------
+    person_height = person.bbox[3] - person.bbox[1]
+    item_cy = (item.bbox[1] + item.bbox[3]) / 2  # vertical center of PPE
+
+    if region == "head":
+        # Head zone = top 35 % of the person bounding box
+        head_bottom = person.bbox[1] + person_height * 0.35
+        if item_cy <= head_bottom:
+            return "worn"
+    elif region == "torso":
+        # Torso zone = from 15 % to 70 % of the person bounding box
+        torso_top = person.bbox[1] + person_height * 0.15
+        torso_bottom = person.bbox[1] + person_height * 0.70
+        if torso_top <= item_cy <= torso_bottom:
+            return "worn"
+
+    # --- Keypoint-distance check (generous threshold) -----------------
     if person.keypoints is None or person.keypoint_conf is None:
         return "uncertain"
 
@@ -104,7 +125,7 @@ def _verify_ppe_worn(item: Detection, person: Detection) -> str:
     if region_center is None:
         return "uncertain"
 
-    threshold = VERIFY_MARGIN_RATIO * (person.bbox[3] - person.bbox[1])
+    threshold = VERIFY_MARGIN_RATIO * person_height
     dist = float(np.hypot(item_center[0] - region_center[0], item_center[1] - region_center[1]))
     return "worn" if dist <= threshold else "carried"
 
