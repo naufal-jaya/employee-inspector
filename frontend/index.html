@@ -177,24 +177,14 @@
         <p id="videoStatusMsg" class="status-msg"></p>
 
         <section class="result-panel result-panel--video" id="videoResultPanel" hidden>
-          <!-- Left: Annotated Video Players (Dual Confidence) -->
+          <!-- Left: Annotated Video Player -->
           <div class="result-panel__left">
             <div class="panel-header">
-              <h3>High Confidence (50%)</h3>
-              <span class="badge badge--live">Filtered</span>
+              <h3>Analysis Result</h3>
+              <span class="badge badge--live">Annotated</span>
             </div>
             <div class="result-panel__image">
-              <video id="annotatedVideoHigh" controls playsinline class="annotated-video" style="margin-bottom: 2rem;">
-                Your browser does not support HTML5 video.
-              </video>
-            </div>
-
-            <div class="panel-header">
-              <h3>Low Confidence (20%)</h3>
-              <span class="badge badge--error">Raw Sensitivity</span>
-            </div>
-            <div class="result-panel__image">
-              <video id="annotatedVideoLow" controls playsinline class="annotated-video">
+              <video id="annotatedVideo" controls playsinline class="annotated-video" style="margin-bottom: 2rem;">
                 Your browser does not support HTML5 video.
               </video>
             </div>

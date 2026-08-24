@@ -262,17 +262,11 @@ function renderVideoResults(data) {
   const resultPanel = document.getElementById("videoResultPanel");
   if (resultPanel) resultPanel.hidden = false;
 
-  // Video players (dual confidence)
-  const videoHighEl = document.getElementById("annotatedVideoHigh");
-  if (videoHighEl && data.video_url_high_conf) {
-    videoHighEl.src = `${API_BASE}${data.video_url_high_conf}`;
-    videoHighEl.load();
-  }
-
-  const videoLowEl = document.getElementById("annotatedVideoLow");
-  if (videoLowEl && data.video_url_low_conf) {
-    videoLowEl.src = `${API_BASE}${data.video_url_low_conf}`;
-    videoLowEl.load();
+  // Video player
+  const videoEl = document.getElementById("annotatedVideo");
+  if (videoEl && data.video_url) {
+    videoEl.src = `${API_BASE}${data.video_url}`;
+    videoEl.load();
   }
 
   const summary = data.temporal_summary || [];

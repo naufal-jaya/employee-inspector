@@ -114,7 +114,7 @@ def is_fallen(
 
 
 class PPEDetector:
-    def __init__(self, ppe_weights_path: str, pose_weights_path: str, confidence_threshold: float = 0.4):
+    def __init__(self, ppe_weights_path: str, pose_weights_path: str, confidence_threshold: float = 0.5):
         if not os.path.exists(ppe_weights_path):
             raise FileNotFoundError(f"PPE model weights not found at '{ppe_weights_path}'.")
         if not os.path.exists(pose_weights_path):
@@ -143,7 +143,7 @@ class PPEDetector:
         # 1. Detect Persons + keypoints using the COCO pose model
         person_results = self.person_model.predict(
             source=image,
-            conf=0.25,  # Lower confidence to ensure we catch everyone
+            conf=self.confidence_threshold,
             classes=[0],
             verbose=False,
         )
@@ -209,7 +209,7 @@ class PPEDetector:
         # Track persons with pose model for keypoints + stable IDs
         person_results = self.person_model.track(
             source=image,
-            conf=0.25,
+            conf=self.confidence_threshold,
             classes=[0],
             persist=True,
             verbose=False,
