@@ -47,7 +47,7 @@ HAZARD_CLASSES = {"Fall-Detected"}
 CRITICAL_ITEMS = {"Hardhat"}  # missing this alone already pushes risk to High
 
 PERSON_CLASS = "Person"
-ASSOCIATION_MARGIN_PX = 15  # tolerance when checking if a PPE box "belongs" to a person
+ASSOCIATION_MARGIN_PX = 80  # tolerance when checking if a PPE box "belongs" to a person
 # Distance (as a fraction of the person box height) inside which a PPE item
 # counts as worn on its body region.
 VERIFY_MARGIN_RATIO = 0.40
