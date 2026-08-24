@@ -68,10 +68,19 @@ def _best_matching_person(item: Detection, persons: List[Detection]):
     """A PPE detection can only belong to the person whose box actually
     contains its center point. If several match (crowded frame), pick the
     smallest person box (tightest/most specific match)."""
-    candidates = [
-        p for p in persons
-        if _point_in_box(_center(item.bbox), p.bbox, margin=ASSOCIATION_MARGIN_PX)
-    ]
+    candidates = []
+    item_cx, item_cy = _center(item.bbox)
+    for p in persons:
+        w = p.bbox[2] - p.bbox[0]
+        h = p.bbox[3] - p.bbox[1]
+        # Use a dynamic margin: 20% of person's width/height
+        margin_x = w * 0.2
+        margin_y = h * 0.2
+        
+        if (p.bbox[0] - margin_x) <= item_cx <= (p.bbox[2] + margin_x) and \
+           (p.bbox[1] - margin_y) <= item_cy <= (p.bbox[3] + margin_y):
+            candidates.append(p)
+            
     if not candidates:
         return None
     return min(candidates, key=lambda p: (p.bbox[2] - p.bbox[0]) * (p.bbox[3] - p.bbox[1]))
@@ -217,6 +226,11 @@ def analyze_compliance(detections: List[Detection]) -> List[Dict]:
         for required_ppe in PPE_SCHEMA.keys():
             if required_ppe not in present:
                 bucket["missing"].add(required_ppe)
+        
+        # Conflict resolution: if YOLO predicted BOTH 'Hardhat' and 'NO-Hardhat' 
+        # (common since per-class NMS allows overlapping boxes of different classes),
+        # the positive 'worn' presence takes precedence over the explicit negative.
+        bucket["missing"] = bucket["missing"] - present
 
     results = []
     for idx, (_, bucket) in enumerate(buckets.items(), start=1):
