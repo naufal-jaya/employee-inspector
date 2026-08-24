@@ -92,9 +92,8 @@ async function analyzeImage() {
   const resultPanel = document.getElementById("imageResultPanel");
 
   setButtonLoading(analyzeBtn, true, "Analyzing...");
-  showStatus("imageStatusMsg", "Analyzing image & safety rules...");
-  showLoading(true);
-  if (resultPanel) resultPanel.hidden = true;
+  showStatus("imageStatusMsg", "");
+  showImageSkeleton();
 
   try {
     const formData = new FormData();
@@ -110,13 +109,14 @@ async function analyzeImage() {
     showStatus("imageStatusMsg", "");
   } catch (err) {
     showStatus("imageStatusMsg", `Analysis failed: ${err.message}`, true);
+    if (resultPanel) resultPanel.hidden = true;
   } finally {
     setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analyze Image');
-    showLoading(false);
   }
 }
 
 function renderImageResults(data) {
+  clearImageSkeleton();
   const resultPanel = document.getElementById("imageResultPanel");
   if (resultPanel) resultPanel.hidden = false;
 
@@ -237,9 +237,8 @@ async function analyzeVideo() {
   const resultPanel = document.getElementById("videoResultPanel");
 
   setButtonLoading(analyzeBtn, true, "Processing... this may take a while");
-  showStatus("videoStatusMsg", "Sending video to server for per-frame analysis...");
-  showLoading(true);
-  if (resultPanel) resultPanel.hidden = true;
+  showStatus("videoStatusMsg", "");
+  showVideoSkeleton();
 
   try {
     const formData = new FormData();
@@ -255,13 +254,14 @@ async function analyzeVideo() {
     showStatus("videoStatusMsg", "");
   } catch (err) {
     showStatus("videoStatusMsg", `Video analysis failed: ${err.message}`, true);
+    if (resultPanel) resultPanel.hidden = true;
   } finally {
     setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process Video');
-    showLoading(false);
   }
 }
 
 function renderVideoResults(data) {
+  clearVideoSkeleton();
   const resultPanel = document.getElementById("videoResultPanel");
   if (resultPanel) resultPanel.hidden = false;
 
@@ -575,7 +575,153 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-function showLoading(show) {
-  const overlay = document.getElementById("loadingOverlay");
-  if (overlay) overlay.hidden = !show;
+// ─────────────────────────────────────────────
+// Skeleton Loading
+// ─────────────────────────────────────────────
+function skeletonBlock(cls = "") {
+  return `<div class="skeleton ${cls}"></div>`;
+}
+
+function showImageSkeleton() {
+  const resultPanel = document.getElementById("imageResultPanel");
+  if (!resultPanel) return;
+  resultPanel.hidden = false;
+
+  // Left: skeleton image
+  const imgEl = document.getElementById("annotatedImage");
+  if (imgEl) {
+    imgEl.style.display = "none";
+    const wrap = imgEl.closest(".result-panel__image");
+    if (wrap) {
+      removeOldPreview(wrap, "skeleton-image");
+      const sk = document.createElement("div");
+      sk.className = "skeleton skeleton-image";
+      wrap.appendChild(sk);
+    }
+  }
+
+  // Right: skeleton metrics
+  const metricsGrid = resultPanel.querySelector(".metrics-grid");
+  if (metricsGrid) {
+    metricsGrid.querySelectorAll(".metric-card__value").forEach(v => { v.textContent = ""; });
+    metricsGrid.querySelectorAll(".metric-card").forEach(card => {
+      if (!card.querySelector(".skeleton")) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton skeleton-metric";
+        sk.style.position = "absolute";
+        sk.style.inset = "0";
+        card.style.position = "relative";
+        card.appendChild(sk);
+      }
+    });
+  }
+
+  // Right: skeleton object chips
+  const objectsGrid = document.getElementById("imgObjectsGrid");
+  if (objectsGrid) {
+    objectsGrid.innerHTML = Array.from({ length: 4 }, () =>
+      `<div class="skeleton skeleton-chip"></div>`
+    ).join("");
+  }
+  setText("imgObjectCount", "");
+
+  // Right: skeleton worker cards
+  const resultList = document.getElementById("imgResultList");
+  if (resultList) {
+    resultList.innerHTML = Array.from({ length: 2 }, () =>
+      `<div class="skeleton-card">
+        <div class="skeleton skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton skeleton-line skeleton-line--long"></div>
+        <div class="skeleton skeleton-line skeleton-line--short"></div>
+      </div>`
+    ).join("");
+  }
+}
+
+function clearImageSkeleton() {
+  // Remove skeleton image overlay
+  const imgEl = document.getElementById("annotatedImage");
+  if (imgEl) {
+    imgEl.style.display = "";
+    const wrap = imgEl.closest(".result-panel__image");
+    if (wrap) removeOldPreview(wrap, "skeleton-image");
+  }
+
+  // Remove metric skeletons
+  const resultPanel = document.getElementById("imageResultPanel");
+  if (resultPanel) {
+    resultPanel.querySelectorAll(".metric-card .skeleton").forEach(sk => sk.remove());
+    resultPanel.querySelectorAll(".metric-card").forEach(card => {
+      card.style.position = "";
+    });
+  }
+}
+
+function showVideoSkeleton() {
+  const resultPanel = document.getElementById("videoResultPanel");
+  if (!resultPanel) return;
+  resultPanel.hidden = false;
+
+  // Left: skeleton videos
+  ["annotatedVideoHigh", "annotatedVideoLow"].forEach(id => {
+    const vid = document.getElementById(id);
+    if (vid) {
+      vid.style.display = "none";
+      const wrap = vid.closest(".result-panel__image");
+      if (wrap && !wrap.querySelector(".skeleton-video")) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton skeleton-video";
+        wrap.appendChild(sk);
+      }
+    }
+  });
+
+  // Right: skeleton metrics
+  const metricsGrid = resultPanel.querySelector(".metrics-grid");
+  if (metricsGrid) {
+    metricsGrid.querySelectorAll(".metric-card__value").forEach(v => { v.textContent = ""; });
+    metricsGrid.querySelectorAll(".metric-card").forEach(card => {
+      if (!card.querySelector(".skeleton")) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton skeleton-metric";
+        sk.style.position = "absolute";
+        sk.style.inset = "0";
+        card.style.position = "relative";
+        card.appendChild(sk);
+      }
+    });
+  }
+
+  // Right: skeleton temporal cards
+  const list = document.getElementById("vidTemporalList");
+  if (list) {
+    list.innerHTML = Array.from({ length: 3 }, () =>
+      `<div class="skeleton-card">
+        <div class="skeleton skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton skeleton-line skeleton-line--long"></div>
+        <div class="skeleton skeleton-line skeleton-line--short"></div>
+      </div>`
+    ).join("");
+  }
+}
+
+function clearVideoSkeleton() {
+  const resultPanel = document.getElementById("videoResultPanel");
+  if (!resultPanel) return;
+
+  // Restore video elements
+  ["annotatedVideoHigh", "annotatedVideoLow"].forEach(id => {
+    const vid = document.getElementById(id);
+    if (vid) {
+      vid.style.display = "";
+      const wrap = vid.closest(".result-panel__image");
+      if (wrap) removeOldPreview(wrap, "skeleton-video");
+    }
+  });
+
+  // Remove metric skeletons
+  resultPanel.querySelectorAll(".metric-card .skeleton").forEach(sk => sk.remove());
+  resultPanel.querySelectorAll(".metric-card").forEach(card => {
+    card.style.position = "";
+  });
 }
