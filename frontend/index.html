@@ -1,19 +1,17 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SafeIndustrial</title>
+  <title>Industrial Safety & PPE Detection</title>
   <meta name="description"
-    content="Inspeksi kepatuhan APD (Alat Pelindung Diri) berbasis AI untuk lingkungan kerja industri. Deteksi helm dan rompi keselamatan secara otomatis dari foto, video, atau kamera langsung." />
-  <meta name="robots" content="index, follow" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="SafeIndustrial" />
-  <meta property="og:title" content="SafeIndustrial | Inspeksi Kepatuhan APD Berbasis AI" />
-  <meta property="og:description"
-    content="Deteksi helm dan rompi keselamatan secara otomatis dengan AI dari foto, video, atau kamera langsung." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👷</text></svg>">
+    content="AI-powered PPE compliance detection for industrial workplaces. Analyze images and videos for hardhat and safety vest compliance in real-time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -33,14 +31,14 @@
           </span>
           <div class="brand__text">
             <h1>SafeIndustrial</h1>
-            <p>Inspeksi kepatuhan APD berbasis AI untuk deteksi helm dan rompi keselamatan</p>
+            <p>AI-powered PPE compliance detection for industrial workplaces</p>
           </div>
         </div>
       </div>
     </header>
 
     <!-- TAB NAVIGATION -->
-    <nav class="tab-nav" role="tablist" aria-label="Mode analisis">
+    <nav class="tab-nav" role="tablist" aria-label="Analysis mode">
       <button class="tab-btn tab-btn--active" id="tabImageBtn" role="tab" aria-selected="true"
         aria-controls="imagePanel" data-tab="image">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -49,7 +47,7 @@
           <circle cx="8.5" cy="8.5" r="1.5" />
           <path d="m21 15-5-5L5 21" />
         </svg>
-        Analisis Gambar
+        Image Analysis
       </button>
       <button class="tab-btn" id="tabVideoBtn" role="tab" aria-selected="false" aria-controls="videoPanel"
         data-tab="video">
@@ -58,7 +56,7 @@
           <path d="m22 8-6 4 6 4V8Z" />
           <rect x="2" y="6" width="14" height="12" rx="2" />
         </svg>
-        Analisis Video
+        Video Analysis
       </button>
       <button class="tab-btn" id="tabLiveBtn" role="tab" aria-selected="false" aria-controls="livePanel"
         data-tab="live">
@@ -67,7 +65,7 @@
           <path d="M23 7 16 12 23 17V7Z" />
           <rect x="1" y="5" width="15" height="14" rx="2" />
         </svg>
-        Kamera Langsung
+        Live Camera
       </button>
     </nav>
 
@@ -78,16 +76,16 @@
         <div class="upload-panel" id="imageUploadPanel">
           <input type="file" id="imageFileInput" accept="image/*" hidden />
           <div class="upload-panel__dropzone" id="imageDropzone" tabindex="0" role="button"
-            aria-label="Klik atau tarik-dan-lepas berkas gambar">
+            aria-label="Click or drag and drop a workplace image">
             <div class="dropzone-inner" id="imageDropzoneLabel">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round" opacity="0.45">
+                stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <path d="m21 15-5-5L5 21" />
               </svg>
-              <p>Pilih atau tarik-dan-lepas foto area kerja</p>
-              <span>Mendukung JPG, PNG, WebP</span>
+              <p>Click or drag &amp; drop a workplace photo here</p>
+              <span>Supports JPG, PNG, WebP</span>
             </div>
           </div>
           <button id="analyzeImageBtn" class="btn btn--primary" disabled>
@@ -96,57 +94,58 @@
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
-            Analisis Gambar
+            Analyze Image
           </button>
         </div>
 
-        <p id="imageStatusMsg" class="status-msg" aria-live="polite"></p>
+        <p id="imageStatusMsg" class="status-msg"></p>
 
         <section class="result-panel" id="imageResultPanel" hidden>
           <div class="result-panel__left">
             <div class="panel-header">
-              <h3>Hasil Inspeksi</h3>
+              <h3>Annotated Safety Inspection</h3>
+              <span class="badge badge--live">Visual Output</span>
             </div>
             <div class="result-panel__image">
-              <img id="annotatedImage" alt="Hasil anotasi inspeksi keselamatan" />
+              <img id="annotatedImage" alt="Annotated visual inspection result" />
             </div>
           </div>
 
           <div class="result-panel__right">
             <div class="metrics-grid">
-              <div class="metric-card metric-card--ok">
+              <div class="metric-card">
                 <span class="metric-card__value" id="imgMetricScore">—</span>
-                <span class="metric-card__label">Skor Keselamatan</span>
+                <span class="metric-card__label">Safety Score</span>
               </div>
               <div class="metric-card">
                 <span class="metric-card__value" id="imgMetricObjects">—</span>
-                <span class="metric-card__label">Objek</span>
+                <span class="metric-card__label">Objects</span>
               </div>
               <div class="metric-card">
                 <span class="metric-card__value" id="imgMetricPersons">—</span>
-                <span class="metric-card__label">Orang</span>
+                <span class="metric-card__label">Persons</span>
               </div>
-              <div class="metric-card metric-card--bad">
+              <div class="metric-card">
                 <span class="metric-card__value metric-card__value--bad" id="imgMetricViolations">—</span>
-                <span class="metric-card__label">Pelanggaran</span>
+                <span class="metric-card__label">Violations</span>
               </div>
               <div class="metric-card metric-card--warn">
                 <span class="metric-card__value" id="imgMetricRisk">—</span>
-                <span class="metric-card__label">Skor Risiko</span>
+                <span class="metric-card__label">Risk Score</span>
               </div>
             </div>
 
             <div class="details-section">
               <div class="section-title-bar">
-                <h4>Objek Terdeteksi</h4>
-                <span class="chip-count" id="imgObjectCount">0 objek</span>
+                <h4>Detected Objects</h4>
+                <span class="chip-count" id="imgObjectCount">0 items</span>
               </div>
               <div class="objects-grid" id="imgObjectsGrid"></div>
             </div>
 
             <div class="details-section">
               <div class="section-title-bar">
-                <h4>Kepatuhan Pekerja</h4>
+                <h4>Worker Compliance</h4>
               </div>
               <div id="imgResultList"></div>
             </div>
@@ -159,15 +158,15 @@
         <div class="upload-panel" id="videoUploadPanel">
           <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/avi,video/quicktime" hidden />
           <div class="upload-panel__dropzone" id="videoDropzone" tabindex="0" role="button"
-            aria-label="Klik atau tarik-dan-lepas berkas video">
+            aria-label="Click or drag and drop a workplace video">
             <div class="dropzone-inner" id="videoDropzoneLabel">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                stroke-linecap="round" stroke-linejoin="round" opacity="0.45">
+                stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
                 <path d="m22 8-6 4 6 4V8Z" />
                 <rect x="2" y="6" width="14" height="12" rx="2" />
               </svg>
-              <p>Pilih atau tarik-dan-lepas video area kerja</p>
-              <span>Mendukung MP4, WebM, AVI, MOV</span>
+              <p>Click or drag &amp; drop a workplace video here</p>
+              <span>Supports MP4, WebM, AVI, MOV</span>
             </div>
           </div>
           <button id="analyzeVideoBtn" class="btn btn--primary" disabled>
@@ -175,59 +174,60 @@
               stroke-linecap="round" stroke-linejoin="round">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            Proses Video
+            Process Video
           </button>
         </div>
 
-        <p id="videoStatusMsg" class="status-msg" aria-live="polite"></p>
+        <p id="videoStatusMsg" class="status-msg"></p>
 
         <section class="result-panel result-panel--video" id="videoResultPanel" hidden>
           <!-- Left: Annotated Video Players (Dual Confidence) -->
           <div class="result-panel__left">
             <div class="panel-header">
-              <h3>Kepercayaan Tinggi (50%)</h3>
-              <span class="badge badge--live">Terfilter</span>
+              <h3>High Confidence (50%)</h3>
+              <span class="badge badge--live">Filtered</span>
             </div>
             <div class="result-panel__image">
               <video id="annotatedVideoHigh" controls playsinline class="annotated-video" style="margin-bottom: 2rem;">
-                Browser Anda tidak mendukung pemutar video HTML5.
+                Your browser does not support HTML5 video.
               </video>
             </div>
-            
+
             <div class="panel-header">
-              <h3>Kepercayaan Rendah (20%)</h3>
-              <span class="badge badge--error">Sensitivitas Penuh</span>
+              <h3>Low Confidence (20%)</h3>
+              <span class="badge badge--error">Raw Sensitivity</span>
             </div>
             <div class="result-panel__image">
               <video id="annotatedVideoLow" controls playsinline class="annotated-video">
-                Browser Anda tidak mendukung pemutar video HTML5.
+                Your browser does not support HTML5 video.
               </video>
             </div>
           </div>
 
+          <!-- Right: Temporal Metrics -->
           <div class="result-panel__right">
             <div class="metrics-grid">
               <div class="metric-card">
                 <span class="metric-card__value" id="vidMetricFps">—</span>
-                <span class="metric-card__label">FPS Video</span>
+                <span class="metric-card__label">Video FPS</span>
               </div>
               <div class="metric-card">
                 <span class="metric-card__value" id="vidMetricPersons">—</span>
-                <span class="metric-card__label">Pekerja Terdeteksi</span>
+                <span class="metric-card__label">Unique Workers</span>
               </div>
-              <div class="metric-card metric-card--ok">
+              <div class="metric-card">
                 <span class="metric-card__value" id="vidMetricCompliant">—</span>
-                <span class="metric-card__label">Sepenuhnya Patuh</span>
+                <span class="metric-card__label">Fully Compliant</span>
               </div>
-              <div class="metric-card metric-card--bad">
+              <div class="metric-card">
                 <span class="metric-card__value metric-card__value--bad" id="vidMetricViolators">—</span>
-                <span class="metric-card__label">Ada Pelanggaran</span>
+                <span class="metric-card__label">Had Violations</span>
               </div>
             </div>
 
             <div class="details-section">
               <div class="section-title-bar">
-                <h4>Laporan Temporal Pekerja</h4>
+                <h4>Worker Temporal Report</h4>
               </div>
               <div id="vidTemporalList"></div>
             </div>
@@ -243,41 +243,41 @@
               <video id="liveVideo" class="live-video" autoplay muted playsinline></video>
               <canvas id="liveOverlay" class="live-overlay"></canvas>
             </div>
-            <p id="livePlaceholder" class="empty-text">Kamera belum dinyalakan.</p>
+            <p id="livePlaceholder" class="empty-text">Camera not started.</p>
           </div>
           <div class="live-controls">
-            <button id="startLiveBtn" class="btn btn--primary">Mulai Kamera</button>
-            <button id="stopLiveBtn" class="btn" disabled>Hentikan Kamera</button>
+            <button id="startLiveBtn" class="btn btn--primary">Start Camera</button>
+            <button id="stopLiveBtn" class="btn" disabled>Stop Camera</button>
           </div>
           <p id="liveStatusMsg" class="status-msg" aria-live="polite"></p>
         </div>
 
         <section class="result-panel" id="liveResultPanel" hidden>
           <div class="panel-header">
-            <h3>Inspeksi Langsung</h3>
-            <span class="badge badge--live">Mode Otomatis</span>
+            <h3>Live Inspection</h3>
+            <span class="badge badge--live">Auto Mode</span>
           </div>
           <div class="metrics-grid">
             <div class="metric-card metric-card--warn">
               <span class="metric-card__value" id="liveMetricRisk">—</span>
-              <span class="metric-card__label">Skor Risiko</span>
+              <span class="metric-card__label">Risk Score</span>
             </div>
             <div class="metric-card">
               <span class="metric-card__value" id="liveMetricPersons">—</span>
-              <span class="metric-card__label">Orang</span>
+              <span class="metric-card__label">Persons</span>
             </div>
             <div class="metric-card metric-card--bad">
               <span class="metric-card__value metric-card__value--bad" id="liveMetricViolations">—</span>
-              <span class="metric-card__label">Pelanggaran</span>
+              <span class="metric-card__label">Violations</span>
             </div>
             <div class="metric-card metric-card--warn">
               <span class="metric-card__value" id="liveMetricHazards">—</span>
-              <span class="metric-card__label">Bahaya</span>
+              <span class="metric-card__label">Hazards</span>
             </div>
           </div>
           <div class="details-section">
             <div class="section-title-bar">
-              <h4>Kepatuhan Pekerja</h4>
+              <h4>Worker Compliance</h4>
             </div>
             <div id="liveResultList"></div>
           </div>
@@ -290,7 +290,7 @@
   <!-- Global Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay" hidden>
     <div class="spinner"></div>
-    <p>Sedang Menganalisis...</p>
+    <p>Analyzing...</p>
   </div>
 
   <script src="app.js"></script>

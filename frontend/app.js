@@ -64,7 +64,7 @@ function initImageTab() {
 
 function handleImageSelect(file) {
   if (!file || !file.type.startsWith("image/")) {
-    showStatus("imageStatusMsg", "Pilih berkas gambar yang valid.", true);
+    showStatus("imageStatusMsg", "Please select a valid image file.", true);
     return;
   }
   selectedImageFile = file;
@@ -91,8 +91,8 @@ async function analyzeImage() {
   const analyzeBtn = document.getElementById("analyzeImageBtn");
   const resultPanel = document.getElementById("imageResultPanel");
 
-  setButtonLoading(analyzeBtn, true, "Menganalisis...");
-  showStatus("imageStatusMsg", "Menganalisis gambar & aturan keselamatan...");
+  setButtonLoading(analyzeBtn, true, "Analyzing...");
+  showStatus("imageStatusMsg", "Analyzing image & safety rules...");
   showLoading(true);
   if (resultPanel) resultPanel.hidden = true;
 
@@ -109,9 +109,9 @@ async function analyzeImage() {
     renderImageResults(data);
     showStatus("imageStatusMsg", "");
   } catch (err) {
-    showStatus("imageStatusMsg", `Analisis gagal: ${err.message}`, true);
+    showStatus("imageStatusMsg", `Analysis failed: ${err.message}`, true);
   } finally {
-    setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analisis Gambar');
+    setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analyze Image');
     showLoading(false);
   }
 }
@@ -131,18 +131,18 @@ function renderImageResults(data) {
   setText("imgMetricRisk", `${s.risk_score ?? 0} / 100`);
 
   const allObjects = data.all_objects || [];
-  setText("imgObjectCount", `${allObjects.length} objek`);
+  setText("imgObjectCount", `${allObjects.length} items`);
   const objectsGrid = document.getElementById("imgObjectsGrid");
   if (objectsGrid) {
     let personCounter = 0;
     objectsGrid.innerHTML = allObjects.length
       ? allObjects.map((obj) => {
-          let displayName = obj.class_name;
-          if (displayName === "Person") {
-            personCounter++;
-            displayName = `Person ${personCounter}`;
-          }
-          return `
+        let displayName = obj.class_name;
+        if (displayName === "Person") {
+          personCounter++;
+          displayName = `Person ${personCounter}`;
+        }
+        return `
         <div class="object-chip object-chip--${getCategoryClass(obj.category)}">
           <div class="object-chip__header">
             <span class="object-chip__name">${escapeHtml(displayName)}</span>
@@ -150,8 +150,8 @@ function renderImageResults(data) {
           </div>
           <div class="object-chip__meta">${obj.category}</div>
         </div>`;
-        }).join("")
-      : `<p class="empty-text">Tidak ada objek terdeteksi.</p>`;
+      }).join("")
+      : `<p class="empty-text">No objects detected.</p>`;
   }
 
   const resultList = document.getElementById("imgResultList");
@@ -159,7 +159,7 @@ function renderImageResults(data) {
     const results = data.results || [];
     resultList.innerHTML = results.length
       ? results.map((p, index) => buildPersonCard(p, index)).join("")
-      : `<p class="empty-text">Tidak ada orang terdeteksi.</p>`;
+      : `<p class="empty-text">No persons detected.</p>`;
   }
 }
 
@@ -167,29 +167,29 @@ function buildPersonCard(person, index) {
   const isCompliant = person.compliance_status === "Compliant";
   const missingHtml = person.missing_ppe?.length
     ? person.missing_ppe.map((i) => `<span class="badge badge--bad">${escapeHtml(i)}</span>`).join(" ")
-    : `<span class="badge badge--ok">Tidak ada</span>`;
+    : `<span class="badge badge--ok">None</span>`;
   const presentHtml = person.detected_ppe?.length
     ? person.detected_ppe.map((i) => `<span class="badge badge--ok">${escapeHtml(i)}</span>`).join(" ")
-    : `<span class="badge badge--muted">Tidak ada</span>`;
+    : `<span class="badge badge--muted">None detected</span>`;
   const carriedHtml = person.carried_ppe?.length
     ? person.carried_ppe.map((i) => `<span class="badge badge--warn">${escapeHtml(i)}</span>`).join(" ")
     : "";
   const carriedLine = carriedHtml
-    ? `<span>Dibawa (tidak dipakai): ${carriedHtml}</span>`
+    ? `<span>Carried (not worn): ${carriedHtml}</span>`
     : "";
-  
+
   // Use array index (1-based) if provided, otherwise fallback to person_id
   const workerNumber = index !== undefined ? index + 1 : person.person_id;
-  
+
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
       <div class="result-card__title">
-        <span>Pekerja #${workerNumber}</span>
-        <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "PATUH" : "PELANGGARAN"}</span>
+        <span>Worker #${workerNumber}</span>
+        <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
       </div>
       <div class="result-card__meta">
-        <span>Terdeteksi: ${presentHtml}</span>
-        <span>Kurang: ${missingHtml}</span>
+        <span>Detected: ${presentHtml}</span>
+        <span>Missing: ${missingHtml}</span>
         ${carriedLine}
       </div>
       <div class="result-card__reco">${escapeHtml(person.recommendation)}</div>
@@ -211,7 +211,7 @@ function initVideoTab() {
 
 function handleVideoSelect(file) {
   if (!file || !file.type.startsWith("video/")) {
-    showStatus("videoStatusMsg", "Pilih berkas video yang valid (MP4, WebM, AVI, MOV).", true);
+    showStatus("videoStatusMsg", "Please select a valid video file (MP4, WebM, AVI, MOV).", true);
     return;
   }
   selectedVideoFile = file;
@@ -236,8 +236,8 @@ async function analyzeVideo() {
   const analyzeBtn = document.getElementById("analyzeVideoBtn");
   const resultPanel = document.getElementById("videoResultPanel");
 
-  setButtonLoading(analyzeBtn, true, "Memproses... bisa memakan waktu beberapa saat");
-  showStatus("videoStatusMsg", "Mengirim video ke server untuk analisis per-frame...");
+  setButtonLoading(analyzeBtn, true, "Processing... this may take a while");
+  showStatus("videoStatusMsg", "Sending video to server for per-frame analysis...");
   showLoading(true);
   if (resultPanel) resultPanel.hidden = true;
 
@@ -254,9 +254,9 @@ async function analyzeVideo() {
     renderVideoResults(data);
     showStatus("videoStatusMsg", "");
   } catch (err) {
-    showStatus("videoStatusMsg", `Analisis video gagal: ${err.message}`, true);
+    showStatus("videoStatusMsg", `Video analysis failed: ${err.message}`, true);
   } finally {
-    setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Proses Video');
+    setButtonLoading(analyzeBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process Video');
     showLoading(false);
   }
 }
@@ -293,7 +293,7 @@ function renderVideoResults(data) {
   if (list) {
     list.innerHTML = summary.length
       ? summary.map((w) => buildTemporalCard(w)).join("")
-      : `<p class="empty-text">Tidak ada orang terlacak di video ini.</p>`;
+      : `<p class="empty-text">No persons tracked in this video.</p>`;
   }
 }
 
@@ -303,23 +303,23 @@ function buildTemporalCard(worker) {
   const isFullyCompliant = worker.violation_seconds === 0;
 
   const primaryViolationHtml = worker.primary_violation
-    ? `<span>Pelanggaran utama: <span class="badge badge--bad">${escapeHtml(worker.primary_violation)}</span></span>`
-    : `<span class="badge badge--ok">Tidak ada pelanggaran</span>`;
+    ? `<span>Primary violation: <span class="badge badge--bad">${escapeHtml(worker.primary_violation)}</span></span>`
+    : `<span class="badge badge--ok">No violations</span>`;
 
   return `
     <div class="result-card ${isFullyCompliant ? "compliant" : "non-compliant"}">
       <div class="result-card__title">
-        <span>Pekerja #${worker.track_id}</span>
-        <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Patuh</span>
+        <span>Worker #${worker.track_id}</span>
+        <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Compliant</span>
       </div>
       <div class="time-bar-wrap">
         <div class="time-bar">
-          <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Patuh: ${worker.compliant_seconds} dt"></div>
-          <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Pelanggaran: ${worker.violation_seconds} dt"></div>
+          <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Compliant: ${worker.compliant_seconds}s"></div>
+          <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Violation: ${worker.violation_seconds}s"></div>
         </div>
         <div class="time-bar__labels">
-          <span>Patuh ${worker.compliant_seconds} dt</span>
-          <span>Pelanggaran ${worker.violation_seconds} dt</span>
+          <span>✔ ${worker.compliant_seconds}s compliant</span>
+          <span>✘ ${worker.violation_seconds}s violation</span>
         </div>
       </div>
       <div class="result-card__meta">${primaryViolationHtml}</div>
@@ -351,7 +351,7 @@ async function startLiveCamera() {
   const placeholder = document.getElementById("livePlaceholder");
 
   if (!navigator.mediaDevices?.getUserMedia) {
-    showStatus("liveStatusMsg", "API kamera tidak didukung di browser ini.", true);
+    showStatus("liveStatusMsg", "Camera API is not supported in this browser.", true);
     return;
   }
   try {
@@ -363,10 +363,10 @@ async function startLiveCamera() {
     stopBtn.disabled = false;
     setupLiveOverlaySize();
     showLivePanel(true);
-    showStatus("liveStatusMsg", "Kamera aktif. Menganalisis otomatis...");
+    showStatus("liveStatusMsg", "Camera active. Auto-analyzing...");
     startLiveLoop();
   } catch (err) {
-    showStatus("liveStatusMsg", `Error kamera: ${err.message}`, true);
+    showStatus("liveStatusMsg", `Camera error: ${err.message}`, true);
   }
 }
 
@@ -425,7 +425,7 @@ async function liveAnalyzeLoop() {
     const data = await res.json();
     renderLiveResults(data);
   } catch (err) {
-    showStatus("liveStatusMsg", `Analisis langsung gagal: ${err.message}`, true);
+    showStatus("liveStatusMsg", `Live analysis failed: ${err.message}`, true);
   } finally {
     liveBusy = false;
   }
@@ -452,7 +452,7 @@ function renderLiveResults(data) {
     const results = data.results || [];
     list.innerHTML = results.length
       ? results.map((p) => buildPersonCard(p)).join("")
-      : `<p class="empty-text">Tidak ada orang terdeteksi.</p>`;
+      : `<p class="empty-text">No persons detected.</p>`;
   }
 }
 
@@ -484,7 +484,7 @@ function stopLiveCamera() {
   showLivePanel(false);
   document.getElementById("startLiveBtn").disabled = false;
   document.getElementById("stopLiveBtn").disabled = true;
-  showStatus("liveStatusMsg", "Kamera dihentikan.");
+  showStatus("liveStatusMsg", "Camera stopped.");
 }
 
 function drawLiveAnnotations(ctx, data, scale) {
