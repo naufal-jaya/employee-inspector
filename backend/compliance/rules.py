@@ -83,7 +83,18 @@ def _best_matching_person(item: Detection, persons: List[Detection]):
             
     if not candidates:
         return None
-    return min(candidates, key=lambda p: (p.bbox[2] - p.bbox[0]) * (p.bbox[3] - p.bbox[1]))
+        
+    # If multiple candidates overlap, pick the one whose center is closest 
+    # to the PPE center, NORMALIZED by the person's dimensions.
+    # This prevents a background person (whose center might be absolutely 
+    # closer to a tall foreground person's head) from stealing the PPE.
+    def normalized_dist(p):
+        pcx, pcy = _center(p.bbox)
+        w = max(1, p.bbox[2] - p.bbox[0])
+        h = max(1, p.bbox[3] - p.bbox[1])
+        return ((pcx - item_cx) / w)**2 + ((pcy - item_cy) / h)**2
+        
+    return min(candidates, key=normalized_dist)
 
 
 def _verify_ppe_worn(item: Detection, person: Detection) -> str:
