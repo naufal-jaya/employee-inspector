@@ -36,10 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
         panel.hidden = false;
       }
 
-      if (target === "live") {
-        startLiveLoop();
-      } else {
-        stopLiveLoop();
+      if (target !== "live") {
+        stopLiveCamera();
       }
     });
   });
@@ -328,19 +326,19 @@ function buildTemporalCard(worker) {
 // ─────────────────────────────────────────────
 // LIVE CAMERA TAB
 // ─────────────────────────────────────────────
-const LIVE_ANALYZE_INTERVAL_MS = 1000;
 const LIVE_MAX_WIDTH = 640;
 let liveStream = null;
-let liveAnalyzeTimer = null;
 let liveBusy = false;
 let liveOverlayScale = 1;
 
 function initLiveTab() {
   const startBtn = document.getElementById("startLiveBtn");
   const stopBtn = document.getElementById("stopLiveBtn");
+  const captureBtn = document.getElementById("captureLiveBtn");
 
   if (startBtn) startBtn.addEventListener("click", startLiveCamera);
   if (stopBtn) stopBtn.addEventListener("click", stopLiveCamera);
+  if (captureBtn) captureBtn.addEventListener("click", captureLiveFrame);
 }
 
 async function startLiveCamera() {
@@ -360,10 +358,9 @@ async function startLiveCamera() {
     if (placeholder) placeholder.style.display = "none";
     startBtn.disabled = true;
     stopBtn.disabled = false;
+    document.getElementById("captureLiveBtn").disabled = false;
     setupLiveOverlaySize();
-    showLivePanel(true);
-    showStatus("liveStatusMsg", "Camera active. Auto-analyzing...");
-    startLiveLoop();
+    showStatus("liveStatusMsg", "Camera active. Ready to capture.");
   } catch (err) {
     showStatus("liveStatusMsg", `Camera error: ${err.message}`, true);
   }
@@ -377,23 +374,15 @@ function setupLiveOverlaySize() {
   overlay.height = video.videoHeight;
 }
 
-function startLiveLoop() {
-  if (liveAnalyzeTimer || !liveStream) return;
-  liveAnalyzeLoop();
-  liveAnalyzeTimer = setInterval(liveAnalyzeLoop, LIVE_ANALYZE_INTERVAL_MS);
-}
-
-function stopLiveLoop() {
-  if (liveAnalyzeTimer) {
-    clearInterval(liveAnalyzeTimer);
-    liveAnalyzeTimer = null;
-  }
-}
-
-async function liveAnalyzeLoop() {
-  if (liveBusy) return;
+async function captureLiveFrame() {
+  if (liveBusy || !liveStream) return;
   const video = document.getElementById("liveVideo");
   if (!video || !video.videoWidth) return;
+
+  const captureBtn = document.getElementById("captureLiveBtn");
+  setButtonLoading(captureBtn, true, "Analyzing...");
+  showStatus("liveStatusMsg", "Analyzing captured frame...");
+  showLoading(true);
 
   const vw = video.videoWidth;
   const vh = video.videoHeight;
@@ -416,17 +405,21 @@ async function liveAnalyzeLoop() {
     const formData = new FormData();
     formData.append("image", blob, "live-frame.jpg");
 
-    const res = await fetch(`${API_BASE}/api/analyze?light=true`, { method: "POST", body: formData });
+    const res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: formData });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `Server error ${res.status}`);
     }
     const data = await res.json();
     renderLiveResults(data);
+    showStatus("liveStatusMsg", "");
   } catch (err) {
-    showStatus("liveStatusMsg", `Live analysis failed: ${err.message}`, true);
+    showStatus("liveStatusMsg", `Capture analysis failed: ${err.message}`, true);
   } finally {
     liveBusy = false;
+    const captureBtn = document.getElementById("captureLiveBtn");
+    setButtonLoading(captureBtn, false, '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Capture Frame');
+    showLoading(false);
   }
 }
 
@@ -461,7 +454,6 @@ function showLivePanel(visible) {
 }
 
 function stopLiveCamera() {
-  stopLiveLoop();
   if (liveStream) {
     liveStream.getTracks().forEach((t) => t.stop());
     liveStream = null;
@@ -483,6 +475,7 @@ function stopLiveCamera() {
   showLivePanel(false);
   document.getElementById("startLiveBtn").disabled = false;
   document.getElementById("stopLiveBtn").disabled = true;
+  document.getElementById("captureLiveBtn").disabled = true;
   showStatus("liveStatusMsg", "Camera stopped.");
 }
 

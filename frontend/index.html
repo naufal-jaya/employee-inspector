@@ -65,7 +65,7 @@
           <path d="M23 7 16 12 23 17V7Z" />
           <rect x="1" y="5" width="15" height="14" rx="2" />
         </svg>
-        Live Camera
+        Camera Capture
       </button>
     </nav>
 
@@ -231,7 +231,7 @@
         </section>
       </section>
 
-      <!-- ======= LIVE CAMERA TAB ======= -->
+      <!-- ======= CAMERA CAPTURE TAB ======= -->
       <section class="tab-panel" id="livePanel" role="tabpanel" aria-labelledby="tabLiveBtn" hidden>
         <div class="upload-panel" id="liveUploadPanel">
           <div class="live-video-wrap">
@@ -243,6 +243,13 @@
           </div>
           <div class="live-controls">
             <button id="startLiveBtn" class="btn btn--primary">Start Camera</button>
+            <button id="captureLiveBtn" class="btn btn--primary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Capture Frame
+            </button>
             <button id="stopLiveBtn" class="btn" disabled>Stop Camera</button>
           </div>
           <p id="liveStatusMsg" class="status-msg" aria-live="polite"></p>
@@ -250,8 +257,8 @@
 
         <section class="result-panel" id="liveResultPanel" hidden>
           <div class="panel-header">
-            <h3>Live Inspection</h3>
-            <span class="badge badge--live">Auto Mode</span>
+            <h3>Capture Inspection</h3>
+            <span class="badge badge--live">Manual Mode</span>
           </div>
           <div class="metrics-grid">
             <div class="metric-card metric-card--warn">
