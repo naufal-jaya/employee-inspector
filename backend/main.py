@@ -31,8 +31,6 @@ from compliance.temporal import build_temporal_report
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
-BASE_MODEL_PATH = os.getenv("BASE_MODEL_PATH", "model/weights/yolov8n.pt")
-POSE_MODEL_PATH = os.getenv("POSE_MODEL_PATH", "model/weights/yolov8n-pose.pt")
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
 VIDEO_OUTPUT_DIR = "/tmp/ppe_videos"
 
@@ -52,7 +50,7 @@ detector: PPEDetector | None = None
 def load_model():
     """Load model weights exactly once when the container starts."""
     global detector
-    detector = PPEDetector(MODEL_WEIGHTS_PATH, POSE_MODEL_PATH, CONFIDENCE_THRESHOLD)
+    detector = PPEDetector(MODEL_WEIGHTS_PATH, CONFIDENCE_THRESHOLD)
     os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 
 
@@ -129,6 +127,26 @@ def _encode_to_base64(image_bgr: np.ndarray) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buffer).decode("utf-8")
 
 
+def _crop_and_encode_person(image_bgr: np.ndarray, bbox: list) -> str:
+    x1, y1, x2, y2 = [int(v) for v in bbox]
+    h, w = image_bgr.shape[:2]
+    
+    pad_y = int((y2 - y1) * 0.1)
+    pad_x = int((x2 - x1) * 0.1)
+    
+    y1_p, y2_p = max(0, y1 - pad_y), min(h, y2 + pad_y)
+    x1_p, x2_p = max(0, x1 - pad_x), min(w, x2 + pad_x)
+    
+    crop = image_bgr[y1_p:y2_p, x1_p:x2_p]
+    if crop.size == 0:
+        return None
+        
+    success, buffer = cv2.imencode(".jpg", crop)
+    if not success:
+        return None
+    return "data:image/jpeg;base64," + base64.b64encode(buffer).decode("utf-8")
+
+
 @app.post("/api/analyze")
 async def analyze(image: UploadFile = File(...), light: bool = False):
     if detector is None:
@@ -151,6 +169,10 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
 
     # 2. Rule-based compliance layer
     compliance_results = analyze_compliance(detections)
+
+    # Attach cropped image of each worker
+    for r in compliance_results:
+        r["worker_crop"] = _crop_and_encode_person(image_bgr, r["person_bbox"])
 
     # 3. Visual annotation (skipped in light mode for faster responses)
     annotated_b64 = None
@@ -254,13 +276,14 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # Reset tracker state for a fresh video
         try:
-            if hasattr(detector.person_model, "predictor") and detector.person_model.predictor is not None:
-                if hasattr(detector.person_model.predictor, "trackers") and detector.person_model.predictor.trackers:
-                    detector.person_model.predictor.trackers[0].reset()
+            if hasattr(detector.model, "predictor") and detector.model.predictor is not None:
+                if hasattr(detector.model.predictor, "trackers") and detector.model.predictor.trackers:
+                    detector.model.predictor.trackers[0].reset()
         except Exception:
             pass  # Safe to ignore — tracker resets on new source anyway
 
         per_frame_results = []
+        worker_crops = {}
 
         while True:
             ret, frame = cap.read()
@@ -276,6 +299,12 @@ async def analyze_video(video: UploadFile = File(...)):
 
             # Keep temporal summary
             per_frame_results.append(compliance_results)
+            
+            # Extract one crop per unique worker
+            for r in compliance_results:
+                tid = r.get("track_id", -1)
+                if tid != -1 and tid not in worker_crops:
+                    worker_crops[tid] = _crop_and_encode_person(frame, r["person_bbox"])
 
         cap.release()
         writer.release()
@@ -299,6 +328,10 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # Build temporal report
         temporal_summary = build_temporal_report(per_frame_results, fps)
+        
+        # Attach crops
+        for w in temporal_summary:
+            w["worker_crop"] = worker_crops.get(w["track_id"])
 
     finally:
         os.unlink(input_path)

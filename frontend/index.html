@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Industrial Safety & PPE Detection</title>
+  <title>SIGAP</title>
   <meta name="description"
-    content="AI-powered PPE compliance detection for industrial workplaces. Analyze images and videos for hardhat and safety vest compliance in real-time." />
+    content="Sistem Identifikasi Gear Pekerja" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -30,8 +30,8 @@
             </svg>
           </span>
           <div class="brand__text">
-            <h1>SafeIndustrial</h1>
-            <p>AI-powered PPE compliance detection for industrial workplaces</p>
+            <h1>SIGAP</h1>
+            <p>Sistem Identifikasi Gear Pekerja</p>
           </div>
         </div>
       </div>
@@ -246,33 +246,46 @@
         </div>
 
         <section class="result-panel" id="liveResultPanel" hidden>
-          <div class="panel-header">
-            <h3>Capture Inspection</h3>
-            <span class="badge badge--live">Manual Mode</span>
+          <div class="result-panel__left">
+            <div class="panel-header">
+              <h3>Capture Inspection</h3>
+              <span class="badge badge--live">Manual Mode</span>
+            </div>
+            <div class="result-panel__image">
+              <img id="liveAnnotatedImage" alt="Captured Frame Annotated" />
+            </div>
+            <button id="liveCaptureAgainBtn" class="btn btn--primary" style="margin-top: 16px; width: 100%;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 2v6h6"></path><path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path><path d="M21 22v-6h-6"></path><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+              </svg>
+              Capture Another Frame
+            </button>
           </div>
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-card__value" id="liveMetricObjects">—</span>
-              <span class="metric-card__label">Objects</span>
+          <div class="result-panel__right">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <span class="metric-card__value" id="liveMetricObjects">—</span>
+                <span class="metric-card__label">Objects</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-card__value" id="liveMetricPersons">—</span>
+                <span class="metric-card__label">Persons</span>
+              </div>
+              <div class="metric-card metric-card--bad">
+                <span class="metric-card__value metric-card__value--bad" id="liveMetricViolations">—</span>
+                <span class="metric-card__label">Violations</span>
+              </div>
+              <div class="metric-card metric-card--warn">
+                <span class="metric-card__value" id="liveMetricHazards">—</span>
+                <span class="metric-card__label">Hazards</span>
+              </div>
             </div>
-            <div class="metric-card">
-              <span class="metric-card__value" id="liveMetricPersons">—</span>
-              <span class="metric-card__label">Persons</span>
+            <div class="details-section">
+              <div class="section-title-bar">
+                <h4>Worker Compliance</h4>
+              </div>
+              <div id="liveResultList"></div>
             </div>
-            <div class="metric-card metric-card--bad">
-              <span class="metric-card__value metric-card__value--bad" id="liveMetricViolations">—</span>
-              <span class="metric-card__label">Violations</span>
-            </div>
-            <div class="metric-card metric-card--warn">
-              <span class="metric-card__value" id="liveMetricHazards">—</span>
-              <span class="metric-card__label">Hazards</span>
-            </div>
-          </div>
-          <div class="details-section">
-            <div class="section-title-bar">
-              <h4>Worker Compliance</h4>
-            </div>
-            <div id="liveResultList"></div>
           </div>
         </section>
       </section>

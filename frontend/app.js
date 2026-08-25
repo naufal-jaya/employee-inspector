@@ -178,16 +178,25 @@ function buildPersonCard(person, index) {
   // Use array index (1-based) if provided, otherwise fallback to person_id
   const workerNumber = index !== undefined ? index + 1 : person.person_id;
 
+  const workerCropHtml = person.worker_crop 
+    ? `<img src="${person.worker_crop}" alt="Worker Crop" class="worker-crop-img" />` 
+    : '';
+
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
-      <div class="result-card__title">
-        <span>Worker #${workerNumber}</span>
-        <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
-      </div>
-      <div class="result-card__meta">
-        <span>✔ Present: ${presentHtml}</span>
-        <span>✘ Missing: ${missingHtml}</span>
-        ${carriedLine}
+      <div class="result-card__body" style="display: flex; gap: 16px; align-items: start;">
+        ${workerCropHtml}
+        <div class="result-card__content" style="flex: 1;">
+          <div class="result-card__title">
+            <span>Worker #${workerNumber}</span>
+            <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
+          </div>
+          <div class="result-card__meta">
+            <span>✔ Present: ${presentHtml}</span>
+            <span>✘ Missing: ${missingHtml}</span>
+            ${carriedLine}
+          </div>
+        </div>
       </div>
       <div class="result-card__reco">${escapeHtml(person.recommendation)}</div>
     </div>`;
@@ -297,23 +306,32 @@ function buildTemporalCard(worker) {
     ? `<span>Primary violation: <span class="badge badge--bad">${escapeHtml(worker.primary_violation)}</span></span>`
     : `<span class="badge badge--ok">No violations</span>`;
 
+  const workerCropHtml = worker.worker_crop 
+    ? `<img src="${worker.worker_crop}" alt="Worker Crop" class="worker-crop-img" />` 
+    : '';
+
   return `
     <div class="result-card ${isFullyCompliant ? "compliant" : "non-compliant"}">
-      <div class="result-card__title">
-        <span>Worker #${worker.track_id}</span>
-        <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Compliant</span>
-      </div>
-      <div class="time-bar-wrap">
-        <div class="time-bar">
-          <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Compliant: ${worker.compliant_seconds}s"></div>
-          <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Violation: ${worker.violation_seconds}s"></div>
+      <div class="result-card__body" style="display: flex; gap: 16px; align-items: start;">
+        ${workerCropHtml}
+        <div class="result-card__content" style="flex: 1;">
+          <div class="result-card__title">
+            <span>Worker #${worker.track_id}</span>
+            <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Compliant</span>
+          </div>
+          <div class="time-bar-wrap">
+            <div class="time-bar">
+              <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Compliant: ${worker.compliant_seconds}s"></div>
+              <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Violation: ${worker.violation_seconds}s"></div>
+            </div>
+            <div class="time-bar__labels">
+              <span>✔ ${worker.compliant_seconds}s compliant</span>
+              <span>✘ ${worker.violation_seconds}s violation</span>
+            </div>
+          </div>
+          <div class="result-card__meta">${primaryViolationHtml}</div>
         </div>
-        <div class="time-bar__labels">
-          <span>✔ ${worker.compliant_seconds}s compliant</span>
-          <span>✘ ${worker.violation_seconds}s violation</span>
-        </div>
       </div>
-      <div class="result-card__meta">${primaryViolationHtml}</div>
     </div>`;
 }
 
@@ -329,10 +347,16 @@ function initLiveTab() {
   const startBtn = document.getElementById("startLiveBtn");
   const stopBtn = document.getElementById("stopLiveBtn");
   const captureBtn = document.getElementById("captureLiveBtn");
+  const captureAgainBtn = document.getElementById("liveCaptureAgainBtn");
 
   if (startBtn) startBtn.addEventListener("click", startLiveCamera);
   if (stopBtn) stopBtn.addEventListener("click", stopLiveCamera);
   if (captureBtn) captureBtn.addEventListener("click", captureLiveFrame);
+  if (captureAgainBtn) captureAgainBtn.addEventListener("click", () => {
+    document.getElementById("liveResultPanel").hidden = true;
+    document.getElementById("liveUploadPanel").hidden = false;
+    startLiveCamera();
+  });
 }
 
 async function startLiveCamera() {
@@ -396,6 +420,11 @@ async function captureLiveFrame() {
   liveBusy = true;
   try {
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    stopLiveCamera(); // Turn off camera immediately
+    
+    document.getElementById("liveUploadPanel").hidden = true; // Hide camera UI
+    document.getElementById("liveResultPanel").hidden = false; // Show result UI
+
     const formData = new FormData();
     formData.append("image", blob, "live-frame.jpg");
 
@@ -409,6 +438,8 @@ async function captureLiveFrame() {
     showStatus("liveStatusMsg", "");
   } catch (err) {
     showStatus("liveStatusMsg", `Capture analysis failed: ${err.message}`, true);
+    document.getElementById("liveUploadPanel").hidden = false;
+    document.getElementById("liveResultPanel").hidden = true;
   } finally {
     liveBusy = false;
     const captureBtn = document.getElementById("captureLiveBtn");
@@ -418,13 +449,9 @@ async function captureLiveFrame() {
 }
 
 function renderLiveResults(data) {
-  showLivePanel(true);
-
-  const overlay = document.getElementById("liveOverlay");
-  if (overlay) {
-    const ctx = overlay.getContext("2d");
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
-    drawLiveAnnotations(ctx, data, liveOverlayScale);
+  const annotatedImage = document.getElementById("liveAnnotatedImage");
+  if (annotatedImage && data.annotated_image) {
+    annotatedImage.src = data.annotated_image;
   }
 
   const s = data.summary || {};
@@ -563,5 +590,15 @@ function escapeHtml(str) {
 
 function showLoading(show) {
   const overlay = document.getElementById("loadingOverlay");
-  if (overlay) overlay.hidden = !show;
+  if (!overlay) return;
+  if (show) {
+    const activeTab = document.querySelector(".tab-panel--active");
+    if (activeTab) {
+      const uploadPanel = activeTab.querySelector(".upload-panel");
+      if (uploadPanel) {
+        uploadPanel.insertAdjacentElement("afterend", overlay);
+      }
+    }
+  }
+  overlay.hidden = !show;
 }

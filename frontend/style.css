@@ -598,6 +598,14 @@ body::before {
   border-top: 1px dotted var(--line-soft);
 }
 
+.worker-crop-img {
+  width: 60px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: var(--border-soft);
+}
+
 /* =========================================================
    Video panel
    ========================================================= */
@@ -697,16 +705,16 @@ body::before {
 }
 
 .loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
+  position: relative;
+  background: var(--wash);
+  border: var(--border-soft);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 16px;
+  padding: 12px;
+  margin-top: 16px;
   color: var(--ink);
   font-family: var(--font-mono);
   font-weight: 600;
@@ -717,8 +725,8 @@ body::before {
 }
 
 .spinner {
-  width: 48px;
-  height: 48px;
+  width: 24px;
+  height: 24px;
   border: 3px solid var(--line-soft);
   border-top-color: var(--ink);
   border-radius: 50%;

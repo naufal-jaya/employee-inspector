@@ -17,12 +17,7 @@ from typing import List, Dict
 
 import numpy as np
 
-from model.detector import (
-    Detection,
-    HEAD_KPTS,
-    TORSO_KPTS,
-    _region_center,
-)
+from model.detector import Detection
 
 # ---------------------------------------------------------------------------
 # PPE schema: maps a required "positive" (compliant) class to its "negative"
@@ -41,7 +36,7 @@ PPE_BODY_REGION = {
 }
 
 # Detections that are hazards, not PPE — never associated to a person.
-HAZARD_CLASSES = {"Fall-Detected"}
+HAZARD_CLASSES = set()
 
 # How much missing PPE matters. Used for risk scoring only.
 CRITICAL_ITEMS = {"Hardhat"}  # missing this alone already pushes risk to High
@@ -99,22 +94,16 @@ def _best_matching_person(item: Detection, persons: List[Detection]):
 
 def _verify_ppe_worn(item: Detection, person: Detection) -> str:
     """
-    Pose-aware verification of a single PPE item against a person.
+    Spatial verification of a single PPE item against a person.
 
     Returns one of:
-      - "worn":      item is on the correct body region
-      - "carried":   keypoints ok but item is far from its body region
-      - "uncertain": keypoints unavailable/unreliable -> fall back to legacy logic
+      - "worn":      item is on the correct body region (vertical bounding box overlap)
+      - "carried":   item belongs to person but is not worn properly
     """
     region = PPE_BODY_REGION.get(item.class_name)
     if region is None:
         return "worn"  # item not in schema -> no verification needed
 
-    # --- Spatial fallback: if the PPE bounding box overlaps the correct
-    #     vertical zone of the person, count it as worn regardless of
-    #     keypoint distance.  Helmets sit *above* the head keypoints and
-    #     safety vests span a large area, so pure keypoint-distance
-    #     checks produce far too many false "carried" results. ----------
     person_height = person.bbox[3] - person.bbox[1]
     item_cy = (item.bbox[1] + item.bbox[3]) / 2  # vertical center of PPE
 
@@ -130,24 +119,8 @@ def _verify_ppe_worn(item: Detection, person: Detection) -> str:
         if torso_top <= item_cy <= torso_bottom:
             return "worn"
 
-    # --- Keypoint-distance check (generous threshold) -----------------
-    if person.keypoints is None or person.keypoint_conf is None:
-        return "uncertain"
-
-    item_center = _center(item.bbox)
-    if region == "head":
-        region_center = _region_center(person.keypoints, person.keypoint_conf, HEAD_KPTS)
-    elif region == "torso":
-        region_center = _region_center(person.keypoints, person.keypoint_conf, TORSO_KPTS)
-    else:
-        return "uncertain"
-
-    if region_center is None:
-        return "uncertain"
-
-    threshold = VERIFY_MARGIN_RATIO * person_height
-    dist = float(np.hypot(item_center[0] - region_center[0], item_center[1] - region_center[1]))
-    return "worn" if dist <= threshold else "carried"
+    # If it didn't match the zones, assume carried
+    return "carried"
 
 
 def _risk_level(missing_ppe: set) -> str:
