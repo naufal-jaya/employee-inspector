@@ -38,7 +38,7 @@ class PPEDetector:
         """
         results = self.model.predict(
             source=image,
-            conf=0.40,
+            conf=0.50,
             imgsz=1088,
             verbose=False,
         )
@@ -68,7 +68,7 @@ class PPEDetector:
         
         results = self.model.track(
             source=image,
-            conf=0.40,
+            conf=0.50,
             persist=True,
             verbose=False,
             tracker=_tracker_cfg,

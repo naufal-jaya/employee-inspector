@@ -14,7 +14,7 @@ from typing import Dict, List
 # born from ID fragmentation (tracker briefly loses a person and re-acquires them
 # with a new ID). Real workers and even briefly passing persons are visible for
 # at least this long. Adjust if your videos have very fast walk-throughs.
-MIN_TRACK_SECONDS = 2.0
+MIN_TRACK_SECONDS = 3.0
 
 
 def build_temporal_report(
