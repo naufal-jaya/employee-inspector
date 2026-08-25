@@ -88,14 +88,6 @@
               <span>Supports JPG, PNG, WebP</span>
             </div>
           </div>
-          
-          <div class="slider-container" style="margin-top: 1rem; width: 100%;">
-            <label for="imageConfSlider" style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 500;">
-              High Confidence Threshold 
-              <span id="imageConfDisplay">50%</span>
-            </label>
-            <input type="range" id="imageConfSlider" min="20" max="95" value="50" step="5" style="width: 100%;">
-          </div>
           <button id="analyzeImageBtn" class="btn btn--primary" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round" stroke-linejoin="round">
@@ -111,19 +103,11 @@
         <section class="result-panel" id="imageResultPanel" hidden>
           <div class="result-panel__left">
             <div class="panel-header">
-              <h3>High Confidence (<span id="imgResultHighConfLabel">50</span>%)</h3>
-              <span class="badge badge--live">Filtered</span>
+              <h3>Annotated Safety Inspection</h3>
+              <span class="badge badge--live">Visual Output</span>
             </div>
             <div class="result-panel__image">
-              <img id="annotatedImageHigh" alt="High confidence inspection result" style="margin-bottom: 2rem;" />
-            </div>
-
-            <div class="panel-header">
-              <h3>Low Confidence (20%)</h3>
-              <span class="badge badge--error">Raw Sensitivity</span>
-            </div>
-            <div class="result-panel__image">
-              <img id="annotatedImageLow" alt="Low confidence inspection result" />
+              <img id="annotatedImage" alt="Annotated visual inspection result" />
             </div>
           </div>
 
@@ -181,14 +165,6 @@
               <span>Supports MP4, WebM, AVI, MOV</span>
             </div>
           </div>
-
-          <div class="slider-container" style="margin-top: 1rem; width: 100%;">
-            <label for="videoConfSlider" style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 500;">
-              High Confidence Threshold 
-              <span id="videoConfDisplay">50%</span>
-            </label>
-            <input type="range" id="videoConfSlider" min="20" max="95" value="50" step="5" style="width: 100%;">
-          </div>
           <button id="analyzeVideoBtn" class="btn btn--primary" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round" stroke-linejoin="round">
@@ -204,13 +180,8 @@
           <!-- Left: Annotated Video Player -->
           <div class="result-panel__left">
             <div class="panel-header">
-<<<<<<< HEAD
               <h3>Analysis Result</h3>
               <span class="badge badge--live">Annotated</span>
-=======
-              <h3>High Confidence (<span id="vidResultHighConfLabel">50</span>%)</h3>
-              <span class="badge badge--live">Filtered</span>
->>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
             </div>
             <div class="result-panel__image">
               <video id="annotatedVideo" controls playsinline class="annotated-video" style="margin-bottom: 2rem;">

@@ -54,14 +54,6 @@ function initImageTab() {
   const fileInput = document.getElementById("imageFileInput");
   const dropzone = document.getElementById("imageDropzone");
   const analyzeBtn = document.getElementById("analyzeImageBtn");
-  const slider = document.getElementById("imageConfSlider");
-  const sliderDisplay = document.getElementById("imageConfDisplay");
-
-  if (slider && sliderDisplay) {
-    slider.addEventListener("input", (e) => {
-      sliderDisplay.textContent = `${e.target.value}%`;
-    });
-  }
 
   setupDropzone(dropzone, fileInput, "image/*", (file) => handleImageSelect(file));
 
@@ -105,11 +97,6 @@ async function analyzeImage() {
   try {
     const formData = new FormData();
     formData.append("image", selectedImageFile);
-    
-    const slider = document.getElementById("imageConfSlider");
-    if (slider) {
-      formData.append("threshold", (parseFloat(slider.value) / 100).toString());
-    }
 
     const res = await fetch(`${API_BASE}/api/analyze`, { method: "POST", body: formData });
     if (!res.ok) {
@@ -131,21 +118,8 @@ function renderImageResults(data) {
   const resultPanel = document.getElementById("imageResultPanel");
   if (resultPanel) resultPanel.hidden = false;
 
-  const slider = document.getElementById("imageConfSlider");
-  const confLabel = document.getElementById("imgResultHighConfLabel");
-  if (slider && confLabel) {
-    confLabel.textContent = slider.value;
-  }
-
-  const annotatedImageHigh = document.getElementById("annotatedImageHigh");
-  if (annotatedImageHigh && data.annotated_image_high) {
-    annotatedImageHigh.src = data.annotated_image_high;
-  }
-
-  const annotatedImageLow = document.getElementById("annotatedImageLow");
-  if (annotatedImageLow && data.annotated_image_low) {
-    annotatedImageLow.src = data.annotated_image_low;
-  }
+  const annotatedImage = document.getElementById("annotatedImage");
+  if (annotatedImage && data.annotated_image) annotatedImage.src = data.annotated_image;
 
   const s = data.summary || {};
   setText("imgMetricScore", `${s.safety_score ?? 0}%`);
@@ -203,40 +177,19 @@ function buildPersonCard(person, index) {
 
   // Use array index (1-based) if provided, otherwise fallback to person_id
   const workerNumber = index !== undefined ? index + 1 : person.person_id;
-<<<<<<< HEAD
 
-=======
-  
-  const imgHtml = person.crop_b64 
-    ? `<img src="${person.crop_b64}" alt="Worker ${workerNumber}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0;" />` 
-    : '';
-  
->>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
   return `
     <div class="result-card ${isCompliant ? "compliant" : "non-compliant"}">
-      <div style="display: flex; gap: 12px; align-items: flex-start;">
-        ${imgHtml}
-        <div style="flex-grow: 1;">
-          <div class="result-card__title">
-            <span>Worker #${workerNumber}</span>
-            <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
-          </div>
-          <div class="result-card__meta">
-            <span>✔ Present: ${presentHtml}</span>
-            <span>✘ Missing: ${missingHtml}</span>
-          </div>
-          <div class="result-card__reco">${escapeHtml(person.recommendation)}</div>
-        </div>
+      <div class="result-card__title">
+        <span>Worker #${workerNumber}</span>
+        <span class="badge ${isCompliant ? "badge--ok" : "badge--bad"}">${isCompliant ? "COMPLIANT" : "VIOLATION"}</span>
       </div>
-<<<<<<< HEAD
       <div class="result-card__meta">
         <span>✔ Present: ${presentHtml}</span>
         <span>✘ Missing: ${missingHtml}</span>
         ${carriedLine}
       </div>
       <div class="result-card__reco">${escapeHtml(person.recommendation)}</div>
-=======
->>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
     </div>`;
 }
 
@@ -247,14 +200,6 @@ function initVideoTab() {
   const fileInput = document.getElementById("videoFileInput");
   const dropzone = document.getElementById("videoDropzone");
   const analyzeBtn = document.getElementById("analyzeVideoBtn");
-  const slider = document.getElementById("videoConfSlider");
-  const sliderDisplay = document.getElementById("videoConfDisplay");
-
-  if (slider && sliderDisplay) {
-    slider.addEventListener("input", (e) => {
-      sliderDisplay.textContent = `${e.target.value}%`;
-    });
-  }
 
   setupDropzone(dropzone, fileInput, "video/*", (file) => handleVideoSelect(file));
 
@@ -296,11 +241,6 @@ async function analyzeVideo() {
   try {
     const formData = new FormData();
     formData.append("video", selectedVideoFile);
-    
-    const slider = document.getElementById("videoConfSlider");
-    if (slider) {
-      formData.append("threshold", (parseFloat(slider.value) / 100).toString());
-    }
 
     const res = await fetch(`${API_BASE}/api/analyze-video`, { method: "POST", body: formData });
     if (!res.ok) {
@@ -321,13 +261,6 @@ async function analyzeVideo() {
 function renderVideoResults(data) {
   const resultPanel = document.getElementById("videoResultPanel");
   if (resultPanel) resultPanel.hidden = false;
-  
-  // Set slider value if available
-  const slider = document.getElementById("videoConfSlider");
-  const confLabel = document.getElementById("vidResultHighConfLabel");
-  if (slider && confLabel) {
-    confLabel.textContent = slider.value;
-  }
 
   // Video player
   const videoEl = document.getElementById("annotatedVideo");
@@ -364,32 +297,23 @@ function buildTemporalCard(worker) {
     ? `<span>Primary violation: <span class="badge badge--bad">${escapeHtml(worker.primary_violation)}</span></span>`
     : `<span class="badge badge--ok">No violations</span>`;
 
-  const imgHtml = worker.crop_b64 
-    ? `<img src="${worker.crop_b64}" alt="Worker ${worker.track_id}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0;" />` 
-    : '';
-
   return `
     <div class="result-card ${isFullyCompliant ? "compliant" : "non-compliant"}">
-      <div style="display: flex; gap: 12px; align-items: flex-start;">
-        ${imgHtml}
-        <div style="flex-grow: 1;">
-          <div class="result-card__title">
-            <span>Worker #${worker.track_id}</span>
-            <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Compliant</span>
-          </div>
-          <div class="time-bar-wrap">
-            <div class="time-bar">
-              <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Compliant: ${worker.compliant_seconds}s"></div>
-              <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Violation: ${worker.violation_seconds}s"></div>
-            </div>
-            <div class="time-bar__labels">
-              <span>✔ ${worker.compliant_seconds}s compliant</span>
-              <span>✘ ${worker.violation_seconds}s violation</span>
-            </div>
-          </div>
-          <div class="result-card__meta">${primaryViolationHtml}</div>
+      <div class="result-card__title">
+        <span>Worker #${worker.track_id}</span>
+        <span class="badge ${isFullyCompliant ? "badge--ok" : "badge--bad"}">${compliantPct.toFixed(1)}% Compliant</span>
+      </div>
+      <div class="time-bar-wrap">
+        <div class="time-bar">
+          <div class="time-bar__fill time-bar__fill--ok" style="width:${compliantPct}%" title="Compliant: ${worker.compliant_seconds}s"></div>
+          <div class="time-bar__fill time-bar__fill--bad" style="width:${violationPct}%" title="Violation: ${worker.violation_seconds}s"></div>
+        </div>
+        <div class="time-bar__labels">
+          <span>✔ ${worker.compliant_seconds}s compliant</span>
+          <span>✘ ${worker.violation_seconds}s violation</span>
         </div>
       </div>
+      <div class="result-card__meta">${primaryViolationHtml}</div>
     </div>`;
 }
 
