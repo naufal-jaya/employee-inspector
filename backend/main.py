@@ -20,14 +20,19 @@ import uuid
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image
 
+<<<<<<< HEAD
 from compliance.economics import economic_impact
 from compliance.rules import HAZARD_CLASSES, analyze_compliance
 from compliance.temporal import build_temporal_report
+=======
+from compliance.rules import analyze_compliance
+from compliance.temporal import build_temporal_report, ComplianceDebouncer
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
 from model.detector import PPEDetector
 
 MODEL_WEIGHTS_PATH = os.getenv("MODEL_WEIGHTS_PATH", "model/weights/best.pt")
@@ -101,11 +106,20 @@ def _draw_annotations(image_bgr: np.ndarray, detections: list, compliance_result
         x1, y1, x2, y2 = [int(v) for v in r["person_bbox"]]
         comp_color = (0, 200, 0) if r["compliance_status"] == "Compliant" else (0, 0, 220)
         conf_pct = r.get("person_confidence", 0.0) * 100
+<<<<<<< HEAD
         status_label = f"Person #{r['person_id']} {conf_pct:.1f}% [{r['compliance_status']}]"
         if r.get("carried_ppe"):
             status_label += " [carried: " + ", ".join(r["carried_ppe"]) + "]"
         elif r.get("verification") == "uncertain":
             status_label += " [uncertain]"
+=======
+        
+        display_id = r.get("track_id", -1)
+        if display_id == -1:
+            display_id = r.get("person_id", "?")
+            
+        status_label = f"Person #{display_id} {conf_pct:.1f}% [{r['compliance_status']}]"
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
 
         # Draw a subtle double border for person boxes
         cv2.rectangle(annotated, (x1 - 2, y1 - 2), (x2 + 2, y2 + 2), comp_color, 1)
@@ -130,7 +144,14 @@ def _encode_to_base64(image_bgr: np.ndarray) -> str:
 
 
 @app.post("/api/analyze")
+<<<<<<< HEAD
 async def analyze(image: UploadFile = File(...), light: bool = False):
+=======
+async def analyze(
+    image: UploadFile = File(...),
+    threshold: float = Form(0.5)
+):
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
     if detector is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
@@ -146,19 +167,39 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
     image_rgb = np.array(pil_image)
     image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
-    # 1. Core inference (synchronous, single pass)
-    detections = detector.predict(image_bgr)
+    # 1. Core inference (synchronous, single pass at 20% CONFIDENCE_THRESHOLD)
+    detections_low = detector.predict(image_bgr)
 
-    # 2. Rule-based compliance layer
-    compliance_results = analyze_compliance(detections)
+    # 2. Low Confidence Pipeline
+    compliance_results_low = analyze_compliance(detections_low)
+    annotated_low = _draw_annotations(image_bgr.copy(), detections_low, compliance_results_low)
+    annotated_b64_low = _encode_to_base64(annotated_low)
 
+<<<<<<< HEAD
     # 3. Visual annotation (skipped in light mode for faster responses)
     annotated_b64 = None
     if not light:
         annotated = _draw_annotations(image_bgr, detections, compliance_results)
         annotated_b64 = _encode_to_base64(annotated)
+=======
+    # 3. High Confidence Pipeline (Filtered by dynamic slider threshold)
+    detections_high = [d for d in detections_low if d.confidence >= threshold]
+    compliance_results_high = analyze_compliance(detections_high)
+    annotated_high = _draw_annotations(image_bgr.copy(), detections_high, compliance_results_high)
+    annotated_b64_high = _encode_to_base64(annotated_high)
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
 
-    # 4. Format all detected objects output
+    # 3.5. Capture Worker Screenshots
+    for r in compliance_results_high:
+        x1, y1, x2, y2 = [int(v) for v in r["person_bbox"]]
+        # Bounds check
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(image_bgr.shape[1], x2), min(image_bgr.shape[0], y2)
+        crop = image_bgr[y1:y2, x1:x2]
+        if crop.size > 0:
+            r["crop_b64"] = _encode_to_base64(crop)
+
+    # 4. Format all detected objects output (using high confidence for metrics)
     all_objects = [
         {
             "class_name": d.class_name,
@@ -172,12 +213,12 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
                 else "equipment"
             )
         }
-        for d in detections
+        for d in detections_high
     ]
 
-    # Calculate overall compliance score
-    total_persons = len(compliance_results)
-    compliant_persons = sum(1 for r in compliance_results if r["compliance_status"] == "Compliant")
+    # Calculate overall compliance score (using high confidence)
+    total_persons = len(compliance_results_high)
+    compliant_persons = sum(1 for r in compliance_results_high if r["compliance_status"] == "Compliant")
     safety_score = round((compliant_persons / total_persons * 100), 1) if total_persons > 0 else 100.0
 
     hazards = [
@@ -203,7 +244,13 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
         },
         "hazards": hazards,
         "all_objects": all_objects,
+<<<<<<< HEAD
         "results": compliance_results,
+=======
+        "results": compliance_results_high,
+        "annotated_image_high": annotated_b64_high,
+        "annotated_image_low": annotated_b64_low,
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
     }
 
     # Light mode omits the heavy base64 annotation for faster client-side rendering.
@@ -218,7 +265,10 @@ async def analyze(image: UploadFile = File(...), light: bool = False):
 # ---------------------------------------------------------------------------
 
 @app.post("/api/analyze-video")
-async def analyze_video(video: UploadFile = File(...)):
+async def analyze_video(
+    video: UploadFile = File(...),
+    threshold: float = Form(0.5)
+):
     if detector is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
@@ -261,6 +311,10 @@ async def analyze_video(video: UploadFile = File(...)):
             pass  # Safe to ignore — tracker resets on new source anyway
 
         per_frame_results = []
+        first_appearance_crops = {}
+        
+        # Debounce PPE detections for 1.0 seconds to prevent flickering
+        debouncer = ComplianceDebouncer(fps=fps, hold_seconds=1.0)
 
         while True:
             ret, frame = cap.read()
@@ -274,8 +328,34 @@ async def analyze_video(video: UploadFile = File(...)):
             annotated_frame = _draw_annotations(frame.copy(), detections, compliance_results)
             writer.write(annotated_frame)
 
+<<<<<<< HEAD
             # Keep temporal summary
             per_frame_results.append(compliance_results)
+=======
+            # High Confidence Pipeline (Filter out anything < dynamic threshold)
+            detections_high = [d for d in detections_low if d.confidence >= threshold]
+            
+            # Apply debouncing to high confidence rules
+            compliance_results_high_raw = analyze_compliance(detections_high)
+            compliance_results_high = debouncer.update(compliance_results_high_raw)
+            
+            annotated_frame_high = _draw_annotations(frame.copy(), detections_high, compliance_results_high)
+            writer_high.write(annotated_frame_high)
+            
+            # Capture first appearance crop
+            for r in compliance_results_high:
+                tid = r.get("track_id", -1)
+                if tid != -1 and tid not in first_appearance_crops:
+                    x1, y1, x2, y2 = [int(v) for v in r["person_bbox"]]
+                    x1, y1 = max(0, x1), max(0, y1)
+                    x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
+                    crop = frame[y1:y2, x1:x2]
+                    if crop.size > 0:
+                        first_appearance_crops[tid] = _encode_to_base64(crop)
+
+            # Keep temporal summary based on High Confidence
+            per_frame_results.append(compliance_results_high)
+>>>>>>> f6330c0 (feat: implement dynamic confidence, worker screenshots, and temporal debouncer)
 
         cap.release()
         writer.release()
@@ -299,6 +379,12 @@ async def analyze_video(video: UploadFile = File(...)):
 
         # Build temporal report
         temporal_summary = build_temporal_report(per_frame_results, fps)
+        
+        # Inject worker crops
+        for s in temporal_summary:
+            tid = s["track_id"]
+            if tid in first_appearance_crops:
+                s["crop_b64"] = first_appearance_crops[tid]
 
     finally:
         os.unlink(input_path)
